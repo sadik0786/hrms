@@ -1,4 +1,3 @@
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -37,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           IconButton(
             icon: const Icon(Icons.home, color: Colors.white),
             onPressed: () {
-              Get.offAllNamed(Routes.adminDashboard);
+              Get.offAllNamed(Routes.dashboard);
             },
           ),
         ],
@@ -60,8 +59,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Icon(Icons.person, color: ThemeClass.lightBgColor),
-                          // SizedBox(width: 15.w),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -173,9 +170,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           },
                         );
                       }),
-
-                      // Dropdown for Role
-                      // dropDownList(context),
                       SizedBox(height: 10.h),
                       CustomTextField(
                         labelText: "Employee Name",
@@ -265,58 +259,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget dropDownList(BuildContext context) {
-    if (registerController.roleLoading.value) {
-      return Container(
-        padding: EdgeInsets.symmetric(vertical: 12.h),
-        alignment: Alignment.center,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 20.w,
-              height: 20.h,
-              child: CircularProgressIndicator(strokeWidth: 2.w),
-            ),
-            SizedBox(width: 12.h),
-            Text("Loading roles...", style: TextStyle(fontSize: 16.sp)),
-          ],
-        ),
-      );
-    }
-
-    return DropdownButtonFormField2<int>(
-      isExpanded: true,
-      value: registerController.selectedRoleId.value,
-      items: registerController.roles.value
-          .map(
-            (role) => DropdownMenuItem<int>(value: role["RoleId"], child: Text(role["RoleName"])),
-          )
-          .toList(),
-      onChanged: (value) {
-        registerController.selectedRoleId.value = value;
-      },
-      decoration: InputDecoration(
-        hintText: "Select Role*",
-        prefixIcon: const Icon(Icons.work),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      validator: (value) {
-        if (value == null) {
-          return "Please select a role";
-        }
-        return null;
-      },
-      dropdownStyleData: DropdownStyleData(
-        maxHeight: 300.h,
-        width: MediaQuery.of(context).size.width - 40.w,
-        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12.r)),
-      ),
-      buttonStyleData: ButtonStyleData(
-        padding: EdgeInsets.symmetric(horizontal: 8.w),
-        height: 26.h,
-        width: double.infinity,
-      ),
-    );
-  }
 }
