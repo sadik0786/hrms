@@ -6,9 +6,7 @@ const path = require("path");
 const { poolPromise, sql } = require("./db");
 
 const authRoutes = require("./routes/auth");
-const adminRoutes = require("./routes/admin");
-const taskRoutes = require("./routes/task");
-const hrmsRoutes = require("./routes/hrms");
+const userRoutes = require("./routes/user");
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -57,9 +55,7 @@ async function seedAdmin() {
 // Routes
 app.get("/", async (req, res) => res.json("working"));
 app.use("/api/auth", authRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/task", taskRoutes);
-app.use("/api/hrms", hrmsRoutes);
+app.use("/api/user", userRoutes);
 
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {

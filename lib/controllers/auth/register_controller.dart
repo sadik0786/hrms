@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_mate/core/routes.dart';
 import 'package:task_mate/model/auth/register_request_model.dart';
 import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
+import 'package:task_mate/core/app_constants.dart';
 
 class RegisterController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -43,21 +45,66 @@ class RegisterController extends GetxController {
 
   Future<void> _initializeData() async {
     await loadUserRole();
-    // await loadRoles();
-    // if (currentUserRole.value == "ceo") {
-    //   await loadAdmins();
-    // }
+    await loadRoles();
   }
-
 
   Future<void> loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
-    userName.value = prefs.getString("name") ?? "Employee";
-    currentUserRole.value = prefs.getString("role")?.toLowerCase() ?? '';
+    userName.value = prefs.getString(AppConstants.nameKey) ?? "Employee";
+    currentUserRole.value = prefs.getString(AppConstants.roleKey)?.toLowerCase() ?? '';
   }
 
- 
- 
+  Future<void> loadRoles() async {
+    roleLoading.value = true;
+    try {
+      roles.value = await AuthApiService.getRoles();
+    } catch (e) {
+      print("Error loading roles: $e");
+    } finally {
+      roleLoading.value = false;
+    }
+  }
+
+  Future<void> loadAssignableUsers(String selectedRoleName) async {
+    adminLoading.value = true;
+    
+    try {
+      final myRole = currentUserRole.value.toLowerCase();
+      final prefs = await SharedPreferences.getInstance();
+      print("loadAssignableUsers called");
+      print("My Role: $myRole");
+      print("Selected Role: $selectedRoleName");
+      // Clear previous selection
+      selectedAdminId.value = null;
+
+      if (myRole == AppConstants.roleCeo) {
+        // When CEO adds HR, Accountant, or Manager, they are assigned to CEO
+        // We set selectedAdminId to the CEO's own ID
+        selectedAdminId.value = prefs.getInt(AppConstants.userIdKey);
+        // We can also fetch the CEO list if we want to show it in the dropdown
+        admins.value = [
+          {"ID": selectedAdminId.value, "Name": "Self (${userName.value})"},
+        ];
+      } else if (myRole == AppConstants.roleHr) {
+        if (selectedRoleName == AppConstants.roleAdmin) {
+          // Admin assigned to Manager
+          final users = await AuthApiService.getUsersByRoles(AppConstants.roleManager);
+          admins.value = users;
+        } else if (selectedRoleName == AppConstants.roleEmployee) {
+          // Employee assigned to Admin or Manager
+          final users = await AuthApiService.getUsersByRoles(
+            "${AppConstants.roleAdmin},${AppConstants.roleManager}",
+          );
+          admins.value = users;
+        }
+      }
+    } catch (e) {
+      print("Error loading assignable users: $e");
+    } finally {
+      adminLoading.value = false;
+    }
+  }
+
   Future<void> register() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -69,42 +116,40 @@ class RegisterController extends GetxController {
 
     loading.value = true;
 
-    final currentRole = currentUserRole.value.toLowerCase();
+    try {
+      final request = RegisterRequestModel(
+        name: name.text.trim(),
+        email: email.text.trim(),
+        mobile: mobile.text.trim(),
+        password: password.text.trim(),
+        roleId: roleId,
+        reportingId: selectedAdminId.value,
+      );
 
-    final selectedRoleData = roles.firstWhere((r) => r["RoleId"] == roleId, orElse: () => {});
+      final response = await AuthApiService.registerEmployee(request);
 
-    final selectedRoleName = (selectedRoleData["RoleName"] ?? "").toString().toLowerCase();
+      if (response.success == true) {
+        CustomSnackBar.success("Added successfully!");
 
-    // Superadmin assigning employee must select admin
-    if ((currentRole == 'hr' || currentRole == 'superadmin') &&
-        (selectedRoleName == 'admin' || selectedRoleName == 'employee') &&
-        selectedAdminId.value == null) {
+        // ✅ CLEAR FIELDS
+        name.clear();
+        email.clear();
+        password.clear();
+        mobile.clear();
+        selectedRoleId.value = null;
+        selectedAdminId.value = null;
+
+        // ✅ Go Back
+        Future.delayed(const Duration(milliseconds: 500), () {
+          Get.offAllNamed(Routes.dashboard);
+        });
+      } else {
+        CustomSnackBar.error(response.message ?? "Failed to add employee");
+      }
+    } catch (e) {
+      CustomSnackBar.error("Something went wrong");
+    } finally {
       loading.value = false;
-      CustomSnackBar.error("Please select Assign To");
-      return;
-    }
-
-    // ✅ Create Request Model
-    final request = RegisterRequestModel(
-      name: name.value.text.trim(),
-      email: email.value.text.trim(),
-      mobile: mobile.value.text.trim(),
-      password: password.value.text.trim(),
-      roleId: roleId,
-      reportingId: selectedAdminId.value,
-    );
-
-    // ✅ Call API
-    final response = await AuthApiService.registerEmployee(request);
-
-    loading.value = false;
-
-    // ✅ Handle Typed Response
-    if (response.success == true) {
-      CustomSnackBar.success("Added successfully!");
-      Get.back();
-    } else {
-      CustomSnackBar.error("Failed to add employee");
     }
   }
 }

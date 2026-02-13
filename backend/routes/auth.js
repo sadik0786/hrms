@@ -7,7 +7,6 @@ const {
   login,
   uploadAvatar,
   getRoles,
-  getUsersByRole,
   getUsersByRoles,
   getProfile,
   updateMobile,
@@ -15,8 +14,8 @@ const {
   resetPasswordSelf,
   getCurrentUser,
   checkEmailExists,
-  admins,
 } = require("../controllers/authController");
+const { ROLES, ROLE_IDS } = require("../config/constants");
 
 const router = express.Router();
 
@@ -38,12 +37,32 @@ router.get("/me", authenticate, getCurrentUser);
 router.post("/login", login);
 
 // protected
-
 router.post(
   "/register",
   authenticate,
-  authorize(["ceo", "hr"]),
+  authorize([ROLES.CEO, ROLES.HR]),
   registerEmployee,
 );
+router.get("/roles", authenticate, getRoles);
 
+// single clean endpoint
+router.get(
+  "/users",
+  authenticate,
+  authorize([ROLES.CEO, ROLES.HR]),
+  getUsersByRoles,
+);
+// check mail
+router.post(
+  "/checkemail",
+  authenticate,
+  authorize([ROLES.Manager, ROLES.Admin]),
+  checkEmailExists,
+);
+router.post("/mobileUpdate", authenticate, updateMobile);
+router.get("/profile", authenticate, getProfile);
+router.post("/upload", authenticate, upload.single("avatar"), uploadAvatar);
+// forgot password
+router.post("/forgot_password", forgotPasswordRequest);
+router.post("/reset_password_self", resetPasswordSelf);
 module.exports = router;

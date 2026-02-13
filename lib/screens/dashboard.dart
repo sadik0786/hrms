@@ -53,9 +53,25 @@ class _DashboardState extends State<Dashboard> {
             Get.toNamed(Routes.registerScreen);
           },
         ),
+        _DashboardItem(
+          title: 'My Profile',
+          icon: Icons.account_circle,
+          gradient: [Colors.purpleAccent.shade200, Colors.purpleAccent.shade100],
+          onTap: () {
+            Get.toNamed(Routes.profileScreen);
+          },
+        ),
+        _DashboardItem(
+          title: 'Employees',
+          icon: Icons.account_circle,
+          gradient: [Colors.purpleAccent.shade200, Colors.purpleAccent.shade100],
+          onTap: () {
+            Get.toNamed(Routes.employeeScreen);
+          },
+        ),
       ];
     }
-    if (role == "superadmin") {
+    if (role == "manager") {
       return [
         _DashboardItem(
           title: 'Add Employee',

@@ -66,13 +66,13 @@ exports.registerEmployee = async (req, res) => {
     // Role Hierarchy Logic
     if (creatorRole === ROLES.CEO) {
       if (
-        ![ROLE_IDS.HR, ROLE_IDS.Accountant, ROLE_IDS.SuperAdmin].includes(
+        ![ROLE_IDS.HR, ROLE_IDS.Accountant, ROLE_IDS.Manager].includes(
           newRoleId,
         )
       ) {
         return res.status(403).json({
           success: false,
-          error: "CEO can only create HR, Accountant, or SuperAdmin",
+          error: "CEO can only create HR, Accountant, or Manager",
         });
       }
     } else if (creatorRole === ROLES.HR) {
@@ -86,7 +86,17 @@ exports.registerEmployee = async (req, res) => {
 
     const pool = await poolPromise;
     const hashedPassword = await bcrypt.hash(password, 10);
+    const emailCheck = await pool
+      .request()
+      .input("Email", sql.NVarChar(150), email)
+      .query("SELECT 1 FROM UserTaskMateApp WHERE Email = @Email");
 
+    if (emailCheck.recordset.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Email already exists",
+      });
+    }
     const result = await pool
       .request()
       .input("Name", sql.NVarChar(100), name)
@@ -111,6 +121,7 @@ exports.registerEmployee = async (req, res) => {
 
     res.json({
       success: true,
+      message: "Employee created successfully",
       employee,
     });
   } catch (err) {
@@ -160,9 +171,12 @@ exports.login = async (req, res) => {
 
     // Map DB role names to canonical names
     const roleMap = {
-      superadmin: "superadmin",
-      admin: "admin",
-      employee: "employee",
+      ceo: ROLES.CEO,
+      hr: ROLES.HR,
+      accountant: ROLES.Accountant,
+      manager: ROLES.Manager,
+      admin: ROLES.Admin,
+      employee: ROLES.Employee,
     };
     const normalizedRole =
       roleMap[user.RoleName.toLowerCase()] || user.RoleName.toLowerCase();
@@ -193,9 +207,356 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error("login error:", err);
-    return res.status(200).json({
+    return res.status(400).json({
       success: false,
       message: "Something went wrong on the server. Please try again later.",
     });
+  }
+};
+exports.getUsersByRoles = async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const requestedRoles = (req.query.role || "")
+      .toLowerCase()
+      .split(",")
+      .map((r) => r.trim())
+      .filter((r) => r);
+
+    if (requestedRoles.length === 0) {
+      return res.json({ success: true, users: [] });
+    }
+
+    const placeholders = requestedRoles.map((_, i) => `@role${i}`).join(",");
+
+    const request = pool.request();
+
+    requestedRoles.forEach((role, index) => {
+      request.input(`role${index}`, role);
+    });
+
+    const query = `
+      SELECT 
+        U.ID,
+        U.Name,
+        U.Email,
+        R.RoleName
+      FROM dbo.UserTaskMateApp U
+      INNER JOIN dbo.RoleTaskMateApp R ON U.RoleID = R.RoleID
+      WHERE LOWER(R.RoleName) IN (${placeholders})
+      ORDER BY U.Name
+    `;
+
+    const result = await request.query(query);
+
+    return res.json({
+      success: true,
+      users: result.recordset,
+    });
+  } catch (err) {
+    console.error("getUsersByRoles error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error",
+    });
+  }
+};
+
+//------ Get role (filtered by logged-in user)
+exports.getRoles = async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const result = await pool.request().query(`
+      SELECT RoleId, RoleName 
+      FROM dbo.RoleTaskMateApp 
+      WHERE IsActive = 1 
+      ORDER BY RoleId
+    `);
+
+    let roles = result.recordset || [];
+    const userRole = (req.user?.role || "").toLowerCase().trim();
+
+    if (userRole === ROLES.CEO) {
+      roles = roles.filter((r) =>
+        [ROLES.HR, ROLES.Accountant, ROLES.Manager].includes(
+          (r.RoleName || "").toLowerCase(),
+        ),
+      );
+    } else if (userRole === ROLES.HR) {
+      roles = roles.filter((r) =>
+        [ROLES.Admin, ROLES.Employee].includes(
+          (r.RoleName || "").toLowerCase(),
+        ),
+      );
+    } else {
+      roles = [];
+    }
+
+    return res.json({
+      success: true,
+      roles: roles, // 🔥 changed from data → roles
+    });
+  } catch (err) {
+    console.error("getRoles error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+exports.checkEmailExists = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    if (!email.endsWith("@5nance.com")) {
+      return res.status(400).json({
+        emailExists: false,
+        message: "Only @5nance.com emails are allowed",
+      });
+    }
+
+    const pool = await poolPromise;
+
+    // Check if email exists in EmailTaskMateApp table and is active
+    const emailCheckQuery = `
+      SELECT COUNT(*) as emailCount 
+      FROM dbo.EmailTaskMateApp 
+      WHERE EmpEmail = @Email AND IsActive = 1
+    `;
+
+    const emailCheckResult = await pool
+      .request()
+      .input("Email", sql.NVarChar(150), email)
+      .query(emailCheckQuery);
+
+    const emailExists = emailCheckResult.recordset[0].emailCount > 0;
+
+    res.json({
+      success: true,
+      emailExists: emailExists,
+      message: emailExists
+        ? "Email found in authorized list"
+        : "Email not found in authorized list",
+    });
+  } catch (err) {
+    console.error("checkEmailExists error:", err);
+    res.status(500).json({
+      success: false,
+      error: "Server error during email check",
+    });
+  }
+};
+//------ update mobile
+exports.updateMobile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { mobile } = req.body;
+    // console.log("📥 updateMobile userId:", userId, "mobile:", mobile);
+
+    if (!mobile) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Mobile number is required" });
+    }
+
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input("UserID", sql.Int, userId)
+      .input("Mobile", sql.NVarChar(15), mobile)
+      .query(
+        "UPDATE dbo.UserTaskMateApp SET Mobile = @Mobile WHERE ID = @UserID",
+      );
+
+    res.json({ success: true, message: "Mobile updated successfully" });
+  } catch (error) {
+    console.error("updateMobile error:", error);
+    if (error.originalError && error.originalError.info) {
+      return res.status(400).json({ error: error.originalError.info.message });
+    }
+    res.status(500).json({ success: false, error: "Failed to update mobile" });
+  }
+};
+//------ GET PROFILE
+exports.getProfile = async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("UserId", sql.Int, req.user.id)
+      .query(
+        `SELECT u.ID, u.Name, u.Email, u.Mobile, u.RoleID, r.RoleName, u.ReportingID
+         FROM dbo.UserTaskMateApp u
+         LEFT JOIN dbo.RoleTaskMateApp r ON u.RoleID = r.RoleId
+         WHERE u.ID = @UserId`,
+      );
+
+    if (!result.recordset || result.recordset.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    const u = result.recordset[0];
+    res.json({
+      success: true,
+      user: {
+        id: u.ID,
+        name: u.Name,
+        email: u.Email,
+        mobile: u.Mobile,
+        roleId: u.RoleID,
+        roleName: (u.RoleName || "").toString(),
+        reportingId: u.ReportingID,
+      },
+    });
+  } catch (err) {
+    console.error("getProfile error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+//------ UPLOAD AVATAR
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file || typeof req.file.path !== "string") {
+      return res.status(400).json({ error: "Invalid file upload" });
+    }
+
+    const userId = req.user.id;
+    const filePath = String(req.file.path);
+
+    // 🔹 Define extension properly
+    const ext = path.extname(req.file.originalname) || ".jpg";
+
+    const filename = userId + ext;
+    const outputPath = path.join("uploads", filename);
+    const tempPath = filePath + "_resized" + ext;
+
+    // Resize using sharp
+    await sharp(filePath)
+      .resize(300, 300, { fit: "cover" })
+      .jpeg({ quality: 80 })
+      .toFile(tempPath);
+
+    // Remove original
+    fs.unlinkSync(filePath);
+
+    // Ensure uploads folder exists
+    if (!fs.existsSync("uploads")) fs.mkdirSync("uploads");
+
+    // Remove previous file if exists
+    if (fs.existsSync(outputPath)) {
+      fs.unlinkSync(outputPath);
+    }
+
+    // Rename resized file
+    fs.renameSync(tempPath, outputPath);
+
+    // Build URL
+    const fileUrl = `${
+      process.env.SERVER_URL || "http://192.168.1.117:5000"
+    }/uploads/${filename}`;
+
+    // Save URL in DB
+    const pool = await poolPromise;
+    await pool
+      .request()
+      .input("UserID", sql.Int, userId)
+      .input("ProfileImage", sql.NVarChar(sql.MAX), fileUrl)
+      .query(
+        "UPDATE dbo.UserTaskMateApp SET ProfileImage = @ProfileImage WHERE ID = @UserID",
+      );
+
+    res.json({ success: true, url: fileUrl });
+  } catch (err) {
+    console.error("uploadAvatar error:", err);
+    if (err.originalError && err.originalError.info) {
+      return res.status(400).json({ error: err.originalError.info.message });
+    }
+    res.status(500).json({ error: "Failed to upload image" });
+  }
+};
+//------ Request password reset (send email with reset link/token)
+exports.forgotPasswordRequest = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const pool = await poolPromise;
+    const result = await pool
+      .request()
+      .input("Email", sql.NVarChar, email)
+      .query(
+        "SELECT ID, Email, Name FROM UserTaskMateApp WHERE Email = @Email",
+      );
+
+    if (result.recordset.length === 0) {
+      // Don't reveal if email exists for security
+      return res.json({
+        success: true,
+        message: "If the email exists, a reset link has been sent",
+      });
+    }
+
+    const user = result.recordset[0];
+    res.json({
+      success: true,
+      message: "If the email exists, a reset link has been sent",
+    });
+  } catch (err) {
+    console.error("forgotPasswordRequest error:", err);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+//------ Reset password with token/email verification
+exports.resetPasswordSelf = async (req, res) => {
+  try {
+    const { email, newPassword, resetToken } = req.body;
+
+    // Validate inputs
+    if (!email || !newPassword) {
+      return res.json({
+        success: false,
+        error: "Email and password are required",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.json({
+        success: false,
+        error: "Password must be at least 6 characters",
+      });
+    }
+
+    const pool = await poolPromise;
+
+    // Verify user exists
+    const userResult = await pool
+      .request()
+      .input("Email", sql.NVarChar, email)
+      .query("SELECT ID FROM UserTaskMateApp WHERE Email = @Email");
+
+    if (userResult.recordset.length === 0) {
+      return res.json({ success: false, error: "User not found" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password
+    await pool
+      .request()
+      .input("Email", sql.NVarChar, email)
+      .input("passwordHash", sql.NVarChar, hashedPassword)
+      .query(
+        "UPDATE UserTaskMateApp SET PasswordHash = @passwordHash WHERE Email = @Email",
+      );
+
+    res.json({
+      success: true,
+      message: "Password reset successfully",
+    });
+  } catch (err) {
+    console.error("resetPasswordSelf error:", err);
+    res.status(500).json({ success: false, error: "Failed to reset password" });
   }
 };

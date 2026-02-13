@@ -7,12 +7,14 @@ String registerResponseModelToJson(RegisterResponseModel data) => json.encode(da
 
 class RegisterResponseModel {
   bool? success;
+  final String? message;
   Employee? employee;
 
-  RegisterResponseModel({this.success, this.employee});
+  RegisterResponseModel({this.success, this.message, this.employee});
 
   factory RegisterResponseModel.fromJson(Map<String, dynamic> json) => RegisterResponseModel(
     success: json["success"],
+    message: json["error"] ?? json["message"],
     employee: json["employee"] == null ? null : Employee.fromJson(json["employee"]),
   );
 

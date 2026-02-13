@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:task_mate/controllers/auth/register_controller.dart';
+import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/core/routes.dart';
 import 'package:task_mate/core/theme.dart';
 import 'package:task_mate/widgets/custom_button.dart';
@@ -120,18 +121,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 .toString()
                                 .toLowerCase();
 
-                            final currentRole = registerController.currentUserRole.value
-                                .toLowerCase();
-
-                            if (currentRole == "hr") {
-                              if (selectedRoleName == "admin") {
-                                // await registerController.loadSuperAdmins();
-                              } else if (selectedRoleName == "employee") {
-                                // await registerController.loadAdminsAndSuperAdmins();
-                              }
-                            }
+                            await registerController.loadAssignableUsers(selectedRoleName);
                           },
-
                         ),
                       ),
                       SizedBox(height: 10.h),
@@ -149,8 +140,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             .toLowerCase();
 
                         final showAssignDropdown =
-                            currentRole == "hr" &&
-                            (selectedRoleName == "admin" || selectedRoleName == "employee");
+                            (currentRole == AppConstants.roleCeo &&
+                                (selectedRoleName == AppConstants.roleHr ||
+                                    selectedRoleName == AppConstants.roleAccountant ||
+                                    selectedRoleName == AppConstants.roleManager)) ||
+                            (currentRole == AppConstants.roleHr &&
+                                (selectedRoleName == AppConstants.roleAdmin ||
+                                    selectedRoleName == AppConstants.roleEmployee));
 
                         if (!showAssignDropdown) return const SizedBox();
 
@@ -166,7 +162,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           value: registerController.selectedAdminId.value,
                           isEnabled: true,
                           onChanged: (value) {
-                            registerController.selectedAdminId.value = value;
+                            registerController.selectedRoleId.value = value;
+
+                            final selectedRole = registerController.roles.firstWhere(
+                              (r) => r["RoleId"] == value,
+                              orElse: () => {},
+                            );
+
+                            final selectedRoleName = (selectedRole["RoleName"] ?? "")
+                                .toString()
+                                .toLowerCase();
+
+                            registerController.loadAssignableUsers(selectedRoleName);
                           },
                         );
                       }),
@@ -226,7 +233,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         isRequired: true,
                         hintText: "Enter password",
                         prefixIcon: Icons.lock,
-                        keyboardType: TextInputType.emailAddress,
+                        keyboardType: TextInputType.visiblePassword,
                         controller: registerController.password,
                         isObscure: true,
                         maxLength: 10,
@@ -258,5 +265,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
 }

@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/model/auth/login_request_model.dart';
 import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
+import 'package:task_mate/core/app_constants.dart';
+import 'package:task_mate/core/routes.dart';
 
 class LoginController extends GetxController with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
@@ -90,25 +92,25 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
         final role = (user.role ?? user.roleId ?? "").toString().toLowerCase();
         final userId = user.id ?? user.id;
         if (role.isEmpty || userId == null) throw Exception("Invalid user data");
+        
         // Persist session
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString("token", res.token ?? "");
-        await prefs.setString("role", role);
-        await prefs.setInt("userId", userId);
+        await prefs.setString(AppConstants.tokenKey, res.token ?? "");
+        await prefs.setString(AppConstants.roleKey, role);
+        await prefs.setInt(AppConstants.userIdKey, userId);
+
         //  role-based navigation
         switch (role) {
-          case "ceo":
-          case "hr":
-            Get.offNamed('/adminDashboard');
-            break;
-          case "superadmin":
-          case "admin":
-          case "employee":
-            Get.offNamed('/homeScreen');
+          case AppConstants.roleCeo:
+          case AppConstants.roleHr:
+          case AppConstants.roleManager:
+          case AppConstants.roleAdmin:
+          case AppConstants.roleEmployee:
+            Get.offNamed(Routes.dashboard);
             break;
           default:
             await prefs.clear();
-            Get.offNamed('/login');
+            Get.offNamed(Routes.login);
             return;
         }
         CustomSnackBar.show(

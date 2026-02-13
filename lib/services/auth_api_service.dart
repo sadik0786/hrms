@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/model/auth/login_request_model.dart';
 import 'package:task_mate/model/auth/login_response_model.dart';
 import 'package:task_mate/model/auth/register_request_model.dart';
@@ -15,12 +16,12 @@ class AuthApiService {
   /// ------------------- Token Management -------------------
   static Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("token", token);
+    await prefs.setString(AppConstants.tokenKey, token);
   }
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("token");
+    return prefs.getString(AppConstants.tokenKey);
   }
 
   static Future<void> clearToken() async {
@@ -30,7 +31,7 @@ class AuthApiService {
 
   static Future<int?> getLoggedInUserId() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt("userId");
+    return prefs.getInt(AppConstants.userIdKey);
   }
 
   /// ------------------- Internet Check -------------------
@@ -41,9 +42,11 @@ class AuthApiService {
     } on SocketException catch (_) {
       return false;
     } on Exception {
+      // Handle other potential exceptions
       return false;
     }
   }
+
   // Validate current user
   static Future<Map<String, dynamic>> getCurrentUser() async {
     final token = await getToken();
@@ -68,12 +71,33 @@ class AuthApiService {
       return {"success": false, "error": e.toString()};
     }
   }
-
+  
+  static Future<String?> getCurrentUserRole() async {
+    try {
+      final token = await AuthApiService.getToken();
+      if (token == null) return null;
+      final res = await http
+          .get(
+            Uri.parse("$baseUrl/auth/profile"),
+            headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data["success"] == true && data["user"] != null) {
+          return data["user"];
+        }
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+  
   // Register new emp
   static Future<RegisterResponseModel> registerEmployee(RegisterRequestModel request) async {
     try {
       final token = await getToken();
-      // print('TOKEN: $token');
 
       if (token == null) {
         return RegisterResponseModel(success: false);
@@ -86,16 +110,12 @@ class AuthApiService {
       );
 
       final data = jsonDecode(res.body);
-
-      print("STATUS: ${res.statusCode}");
-      print("RESPONSE: ${res.body}");
-
       return RegisterResponseModel.fromJson(data);
     } catch (e) {
       return RegisterResponseModel(success: false);
     }
   }
-
+  
   // Login
   static Future<LoginResponseModel> login(LoginRequestModel request) async {
     try {
@@ -115,18 +135,17 @@ class AuthApiService {
       if (loginResponse.success == true &&
           loginResponse.token != null &&
           loginResponse.user != null) {
-        print('TOKEN: ${loginResponse.token}');
         await saveToken(loginResponse.token!);
 
         final prefs = await SharedPreferences.getInstance();
 
         // Save user data using model
-        await prefs.setInt('userId', loginResponse.user!.id ?? 0);
-        await prefs.setString('name', loginResponse.user!.name ?? '');
-        await prefs.setString('email', loginResponse.user!.email ?? '');
-        await prefs.setString('mobile', loginResponse.user!.mobile ?? '');
-        await prefs.setInt('roleId', loginResponse.user!.roleId ?? 0);
-        await prefs.setString('role', loginResponse.user!.role?.toLowerCase() ?? '');
+        await prefs.setInt(AppConstants.userIdKey, loginResponse.user!.id ?? 0);
+        await prefs.setString(AppConstants.nameKey, loginResponse.user!.name ?? '');
+        await prefs.setString(AppConstants.emailKey, loginResponse.user!.email ?? '');
+        await prefs.setString(AppConstants.mobileKey, loginResponse.user!.mobile ?? '');
+        await prefs.setInt(AppConstants.roleIdKey, loginResponse.user!.roleId ?? 0);
+        await prefs.setString(AppConstants.roleKey, loginResponse.user!.role?.toLowerCase() ?? '');
 
         return loginResponse;
       } else {
@@ -137,5 +156,51 @@ class AuthApiService {
     }
   }
 
-  //
+  // Get all roles
+  static Future<List<Map<String, dynamic>>> getRoles() async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/auth/roles"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data["success"] == true && data["roles"] != null) {
+          return List<Map<String, dynamic>>.from(data["roles"]);
+        }
+      }
+      return [];
+    } catch (e) {
+      print("getRoles error: $e");
+      return [];
+    }
+  }
+
+  // Get users by roles (comma separated roles like 'admin,manager')
+  static Future<List<Map<String, dynamic>>> getUsersByRoles(String roles) async {
+    try {
+      final token = await getToken();
+      if (token == null) return [];
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/auth/users?role=$roles"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data["success"] == true && data["users"] != null) {
+          return List<Map<String, dynamic>>.from(data["users"]);
+        }
+      }
+      return [];
+    } catch (e) {
+      print("getUsersByRoles error: $e");
+      return [];
+    }
+  }
 }
