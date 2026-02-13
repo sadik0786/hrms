@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/model/auth/login_request_model.dart';
-import 'package:task_mate/services/api_service.dart';
+import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
 
 class LoginController extends GetxController with GetSingleTickerProviderStateMixin {
@@ -74,7 +74,7 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
       loading.value = true;
       if (!formKey.currentState!.validate()) return;
       // Check internet before hitting API
-      if (!await ApiService.hasInternetConnection()) {
+      if (!await AuthApiService.hasInternetConnection()) {
         loading.value = false;
         CustomSnackBar.info("No Internet-Please check your connection");
         return;
@@ -83,7 +83,7 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
         email: email.value.text.trim(),
         password: password.value.text.trim(),
       );
-      final res = await ApiService.login(request);
+      final res = await AuthApiService.login(request);
       if (res.success == true && res.token != null) {
         final user = res.user;
         if (user == null) throw Exception("User data missing");

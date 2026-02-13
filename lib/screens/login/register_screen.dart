@@ -125,9 +125,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                             if (currentRole == "hr") {
                               if (selectedRoleName == "admin") {
-                                await registerController.loadSuperAdmins();
+                                // await registerController.loadSuperAdmins();
                               } else if (selectedRoleName == "employee") {
-                                await registerController.loadAdminsAndSuperAdmins();
+                                // await registerController.loadAdminsAndSuperAdmins();
                               }
                             }
                           },

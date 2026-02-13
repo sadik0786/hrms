@@ -44,6 +44,30 @@ class AuthApiService {
       return false;
     }
   }
+  // Validate current user
+  static Future<Map<String, dynamic>> getCurrentUser() async {
+    final token = await getToken();
+    if (token == null) return {"success": false, "error": "No token"};
+
+    try {
+      final res = await http.get(
+        Uri.parse("$baseUrl/auth/me"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data["success"] == true && data["user"] != null) {
+          return {"success": true, "user": data["user"]};
+        }
+        return {"success": false, "error": "User not found"};
+      }
+
+      return {"success": false, "error": "Server returned ${res.statusCode}"};
+    } catch (e) {
+      return {"success": false, "error": e.toString()};
+    }
+  }
 
   // Register new emp
   static Future<RegisterResponseModel> registerEmployee(RegisterRequestModel request) async {

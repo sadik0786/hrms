@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/model/auth/register_request_model.dart';
-import 'package:task_mate/services/api_service.dart';
+import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
 
 class RegisterController extends GetxController {
@@ -43,33 +43,12 @@ class RegisterController extends GetxController {
 
   Future<void> _initializeData() async {
     await loadUserRole();
-    await loadRoles();
+    // await loadRoles();
     // if (currentUserRole.value == "ceo") {
     //   await loadAdmins();
     // }
   }
 
-  Future<void> loadAdmins() async {
-    adminLoading.value = true;
-
-    try {
-      final res = await ApiService.getAdmins();
-
-      adminLoading.value = false;
-
-      if (res["success"] == true && res["ceo"] != null) {
-        admins.value = List<Map<String, dynamic>>.from(res["ceo"]);
-        selectedAdminId.value = null;
-      } else {
-        admins.clear();
-        selectedAdminId.value = null;
-      }
-    } catch (e) {
-      adminLoading.value = false;
-      admins.clear();
-      selectedAdminId.value = null;
-    }
-  }
 
   Future<void> loadUserRole() async {
     final prefs = await SharedPreferences.getInstance();
@@ -77,103 +56,8 @@ class RegisterController extends GetxController {
     currentUserRole.value = prefs.getString("role")?.toLowerCase() ?? '';
   }
 
-  Future<void> loadRoles() async {
-    roleLoading.value = true;
-
-    try {
-      String? loggedRole = currentUserRole.value;
-      if (loggedRole.isEmpty) {
-        loggedRole = await ApiService.getCurrentUserRole();
-        if (loggedRole != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString("role", loggedRole);
-          currentUserRole.value = loggedRole;
-        }
-      }
-
-      final res = await ApiService.getRoles();
-
-      roleLoading.value = false;
-
-      if (res["success"] == true && res["data"] != null) {
-        var allRoles = List<Map<String, dynamic>>.from(res["data"]);
-
-        // Filter roles based on logged-in role
-        final roleLower = (loggedRole ?? "").toLowerCase();
-
-        if (roleLower == "ceo") {
-          allRoles = allRoles.where((r) {
-            final roleName = (r["RoleName"] ?? "").toString().toLowerCase();
-            return roleName == "hr" || roleName == "accountant" || roleName == "superadmin";
-          }).toList();
-        } else if (roleLower == "hr") {
-          allRoles = allRoles.where((r) {
-            final roleName = (r["RoleName"] ?? "").toString().toLowerCase();
-            return roleName == "admin" || roleName == "employee";
-          }).toList();
-        } else {
-          allRoles = [];
-        }
-
-        roles.value = allRoles;
-
-        // Set default selection if roles exist
-        if (roles.isNotEmpty) {
-          selectedRoleId.value = roles.first["RoleId"];
-        } else {
-          selectedRoleId.value = null;
-        }
-      } else {
-        roles.clear();
-        selectedRoleId.value = null;
-      }
-    } catch (e) {
-      roleLoading.value = false;
-      roles.clear();
-      selectedRoleId.value = null;
-    }
-  }
-
-  Future<void> loadSuperAdmins() async {
-    adminLoading.value = true;
-    selectedAdminId.value = null;
-    admins.clear();
-
-    try {
-      final res = await ApiService.getUsersByRole("superadmin");
-
-      if (res["success"] == true && res["data"] != null) {
-        admins.value = List<Map<String, dynamic>>.from(res["data"]);
-      } else {
-        admins.clear();
-      }
-    } catch (e) {
-      admins.clear();
-    }
-
-    adminLoading.value = false;
-  }
-
-  Future<void> loadAdminsAndSuperAdmins() async {
-    adminLoading.value = true;
-    selectedAdminId.value = null;
-    admins.clear();
-
-    try {
-      final res = await ApiService.getUsersByRoles(["admin", "superadmin"]);
-
-      if (res["success"] == true && res["data"] != null) {
-        admins.value = List<Map<String, dynamic>>.from(res["data"]);
-      } else {
-        admins.clear();
-      }
-    } catch (e) {
-      admins.clear();
-    }
-
-    adminLoading.value = false;
-  }
-
+ 
+ 
   Future<void> register() async {
     if (!formKey.currentState!.validate()) return;
 
@@ -211,7 +95,7 @@ class RegisterController extends GetxController {
     );
 
     // ✅ Call API
-    final response = await ApiService.registerEmployee(request);
+    final response = await AuthApiService.registerEmployee(request);
 
     loading.value = false;
 
