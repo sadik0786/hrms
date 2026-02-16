@@ -306,6 +306,7 @@ class ProfileScreen extends StatelessWidget {
                 onPressed: () async {
                   if (formKey.currentState!.validate()) {
                     await controller.savePin(pinController.text);
+                    if (!ctx.mounted) return;
                     Navigator.pop(ctx);
                     CustomSnackBar.success(
                       "PIN ${controller.savedPin.value == null ? "set" : "updated"} successfully!",

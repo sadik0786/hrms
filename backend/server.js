@@ -43,9 +43,9 @@ async function seedAdmin() {
             (Name, Email, Mobile, PasswordHash, RoleID,ReportingID, CreatedBy, UpdatedBy) 
            VALUES (@name, @email, @mobile, @password, @roleId, 0,0, 0)`,
         );
-      console.log("Super Admin created:", SuperAdminEmail);
+      console.log("Ceo created:", SuperAdminEmail);
     } else {
-      console.log("Super Admin already exists");
+      console.log("Ceo already exists");
     }
   } catch (error) {
     console.error("seedAdmin error:", error);

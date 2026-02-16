@@ -89,8 +89,8 @@ class UserApiService {
     }
   }
 
-  // Get current logged-in user's role via profile endpoint
-  static Future<String?> getCurrentUserRole() async {
+  // Get current logged-in user's profile
+  static Future<Map<String, dynamic>?> getUserProfile() async {
     try {
       final token = await AuthApiService.getToken();
       if (token == null) return null;
@@ -183,8 +183,8 @@ class UserApiService {
     if (token == null) return false;
 
     try {
-      final res = await http.post(
-        Uri.parse("$baseUrl/admin/employee/$empId"),
+      final res = await http.delete(
+        Uri.parse("$baseUrl/user/employee/$empId"),
         headers: {"Authorization": "Bearer $token"},
       );
       print("Delete response: ${res.statusCode} -> ${res.body}");

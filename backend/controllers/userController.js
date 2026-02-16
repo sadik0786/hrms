@@ -14,12 +14,18 @@ exports.getAllEmployees = async (req, res) => {
         U.Email,
         U.Mobile,
         U.ReportingID,
+        RU.Name AS ReportingName,
         U.CreatedBy,
         U.CreatedAt,
-        R.RoleName
+        R.RoleName,
+        C.Name AS AddedByName
       FROM dbo.UserTaskMateApp U
       INNER JOIN dbo.RoleTaskMateApp R 
         ON U.RoleID = R.RoleID
+      LEFT JOIN dbo.UserTaskMateApp C
+        ON U.CreatedBy = C.ID
+      LEFT JOIN dbo.UserTaskMateApp RU
+        ON U.ReportingID = RU.ID
       ORDER BY U.ID ASC
     `;
 
@@ -32,6 +38,30 @@ exports.getAllEmployees = async (req, res) => {
     });
   } catch (err) {
     console.error("getAllEmployees error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "Server error",
+    });
+  }
+};
+
+// Delete employee (CEO + HR only)
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await poolPromise;
+
+    await pool
+      .request()
+      .input("id", sql.Int, id)
+      .query("DELETE FROM dbo.UserTaskMateApp WHERE ID = @id");
+
+    return res.json({
+      success: true,
+      message: "Employee deleted successfully",
+    });
+  } catch (err) {
+    console.error("deleteEmployee error:", err);
     return res.status(500).json({
       success: false,
       error: "Server error",

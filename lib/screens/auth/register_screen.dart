@@ -63,15 +63,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                registerController.userName.value.toUpperCase(),
-                                style: Theme.of(context).textTheme.titleLarge,
+                              Row(
+                                children: [
+                                  Text(
+                                    registerController.userName.value.toUpperCase(),
+                                    style: Theme.of(context).textTheme.titleLarge,
+                                  ),
+                                  Text(
+                                    " (${registerController.currentUserRole.value.toUpperCase()})",
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium!.copyWith(fontStyle: FontStyle.italic),
+                                  ),
+                                ],
                               ),
                               SizedBox(height: 4.h),
-                              Text(
-                                "Logged in as: ${registerController.currentUserRole.value.toUpperCase()}",
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
                               Text(
                                 "You can add: ${registerController.currentUserRole.value.toLowerCase() == "ceo"
                                     ? "Hr / Accountant / Manager"
@@ -96,7 +102,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 20.h),
                       Obx(
                         () => CustomDropdownField<int>(
                           isLoading: registerController.roleLoading.value,
@@ -128,7 +134,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(height: 10.h),
                       // select admin
                       Obx(() {
-                        final currentRole = registerController.currentUserRole.value.toLowerCase();
+                        final currentRole = registerController.currentUserRole.value
+                            .trim()
+                            .toLowerCase();
 
                         final selectedRole = registerController.roles.firstWhere(
                           (r) => r["RoleId"] == registerController.selectedRoleId.value,
@@ -137,6 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                         final selectedRoleName = (selectedRole["RoleName"] ?? "")
                             .toString()
+                            .trim()
                             .toLowerCase();
 
                         final showAssignDropdown =
@@ -162,18 +171,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           value: registerController.selectedAdminId.value,
                           isEnabled: true,
                           onChanged: (value) {
-                            registerController.selectedRoleId.value = value;
-
-                            final selectedRole = registerController.roles.firstWhere(
-                              (r) => r["RoleId"] == value,
-                              orElse: () => {},
-                            );
-
-                            final selectedRoleName = (selectedRole["RoleName"] ?? "")
-                                .toString()
-                                .toLowerCase();
-
-                            registerController.loadAssignableUsers(selectedRoleName);
+                            registerController.selectedAdminId.value = value;
                           },
                         );
                       }),

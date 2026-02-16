@@ -74,18 +74,26 @@ class UserController extends GetxController {
     Map<String, dynamic>? userFromServer;
     try {
       // Fetch latest user from server using UserApiService
-      // Note: UserApiService.getCurrentUserRole corresponds to the endpoint /auth/profile which returns {user: ...}
-      userFromServer = await UserApiService.getCurrentUserRole() as Map<String, dynamic>?;
+      userFromServer = await UserApiService.getUserProfile();
 
       if (userFromServer != null) {
-        // Update local cache
-        await prefs.setInt(AppConstants.userIdKey, userFromServer["ID"]);
-        await prefs.setString(AppConstants.nameKey, userFromServer["Name"] ?? "");
-        await prefs.setString(AppConstants.emailKey, userFromServer["Email"] ?? "");
-        await prefs.setString(AppConstants.mobileKey, userFromServer["Mobile"] ?? "");
-        await prefs.setString(AppConstants.roleKey, userFromServer["RoleName"] ?? "");
+        // Update local cache - handle flexible casing from backend
+        final uId = userFromServer["id"] ?? userFromServer["ID"];
+        final uName = userFromServer["name"] ?? userFromServer["Name"] ?? "";
+        final uEmail = userFromServer["email"] ?? userFromServer["Email"] ?? "";
+        final uMobile = userFromServer["mobile"] ?? userFromServer["Mobile"] ?? "";
+        final uRole = userFromServer["roleName"] ?? userFromServer["RoleName"] ?? "";
+
+        await prefs.setInt(AppConstants.userIdKey, uId);
+        await prefs.setString(AppConstants.nameKey, uName);
+        await prefs.setString(AppConstants.emailKey, uEmail);
+        await prefs.setString(AppConstants.mobileKey, uMobile);
+        await prefs.setString(AppConstants.roleKey, uRole);
+
         if (userFromServer["ProfileImage"] != null) {
           await prefs.setString("avatarUrl", userFromServer["ProfileImage"]);
+        } else if (userFromServer["profileImage"] != null) {
+          await prefs.setString("avatarUrl", userFromServer["profileImage"]);
         }
       }
     } catch (e) {
@@ -93,18 +101,36 @@ class UserController extends GetxController {
     }
 
     // Set observables from cache (or updated cache)
-    userID.value = userFromServer?["ID"] ?? prefs.getInt(AppConstants.userIdKey) ?? 0;
-    userName.value = userFromServer?["Name"] ?? prefs.getString(AppConstants.nameKey) ?? "";
-    email.value = userFromServer?["Email"] ?? prefs.getString(AppConstants.emailKey) ?? "";
-    mobile.value = userFromServer?["Mobile"] ?? prefs.getString(AppConstants.mobileKey) ?? "";
-    role.value = userFromServer?["RoleName"] ?? prefs.getString(AppConstants.roleKey) ?? "";
+    userID.value =
+        (userFromServer?["id"] ?? userFromServer?["ID"]) ??
+        prefs.getInt(AppConstants.userIdKey) ??
+        0;
+    userName.value =
+        (userFromServer?["name"] ?? userFromServer?["Name"]) ??
+        prefs.getString(AppConstants.nameKey) ??
+        "";
+    email.value =
+        (userFromServer?["email"] ?? userFromServer?["Email"]) ??
+        prefs.getString(AppConstants.emailKey) ??
+        "";
+    mobile.value =
+        (userFromServer?["mobile"] ?? userFromServer?["Mobile"]) ??
+        prefs.getString(AppConstants.mobileKey) ??
+        "";
+    role.value =
+        (userFromServer?["roleName"] ?? userFromServer?["RoleName"]) ??
+        prefs.getString(AppConstants.roleKey) ??
+        "";
 
     final localPath = prefs.getString("localAvatarPath");
     if (localPath != null && localPath.isNotEmpty) {
       localAvatar.value = File(localPath);
       avatarUrl.value = null;
     } else {
-      final avatarPath = userFromServer?["ProfileImage"] ?? prefs.getString("avatarUrl");
+      final avatarPath =
+          userFromServer?["ProfileImage"] ??
+          userFromServer?["profileImage"] ??
+          prefs.getString("avatarUrl");
       if (avatarPath != null && avatarPath.isNotEmpty) {
         avatarUrl.value = avatarPath;
         localAvatar.value = null;
@@ -116,6 +142,7 @@ class UserController extends GetxController {
 
   Future<void> logOut() async {
     await AuthApiService.clearToken();
+    Get.delete<UserController>(); // Clear memory to avoid persistence issues
     Get.offAllNamed(Routes.login);
   }
 

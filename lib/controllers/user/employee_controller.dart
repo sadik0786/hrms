@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:task_mate/services/user_api_service.dart';
+import 'package:task_mate/widgets/custom_snackbar.dart';
 
 class EmployeeController extends GetxController {
   RxBool loading = false.obs;
@@ -18,5 +19,13 @@ class EmployeeController extends GetxController {
     employees.value = result;
 
     loading.value = false;
+  }
+
+  Future<void> deleteEmployee(int empId) async {
+    final success = await UserApiService.deleteEmployee(empId);
+    if (success) {
+      employees.removeWhere((emp) => emp["ID"] == empId);
+      CustomSnackBar.success("Employee deleted successfully");
+    }
   }
 }

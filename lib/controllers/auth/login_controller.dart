@@ -98,7 +98,9 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
         await prefs.setString(AppConstants.tokenKey, res.token ?? "");
         await prefs.setString(AppConstants.roleKey, role);
         await prefs.setInt(AppConstants.userIdKey, userId);
-
+        print("token: ${res.token}");
+        print("role: $role");
+        print("userId: $userId");
         //  role-based navigation
         switch (role) {
           case AppConstants.roleCeo:

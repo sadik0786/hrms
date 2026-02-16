@@ -1,52 +1,188 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:task_mate/common/no_data.dart';
+import 'package:task_mate/common/page_loader.dart';
 import 'package:task_mate/controllers/user/employee_controller.dart';
+import 'package:task_mate/controllers/user/user_controller.dart';
+import 'package:task_mate/core/app_constants.dart';
+import 'package:task_mate/core/theme.dart';
+import 'package:task_mate/utils/common_fn.dart';
 
 class EmployeeScreen extends StatelessWidget {
   EmployeeScreen({super.key});
 
-  final EmployeeController controller = Get.put(EmployeeController());
+  final EmployeeController empController = Get.put(EmployeeController());
+  final UserController userController = Get.put(UserController());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("All Employees"), centerTitle: true),
+      backgroundColor: ThemeClass.darkBgColor,
+      appBar: AppBar(
+        title: Text("All Employees", style: Theme.of(context).textTheme.titleLarge),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Get.back();
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.home, color: Colors.white),
+            onPressed: () {
+              userController.checkAuthAndNavigate();
+            },
+          ),
+        ],
+      ),
       body: Obx(() {
-        if (controller.loading.value) {
-          return const Center(child: CircularProgressIndicator());
+        if (empController.loading.value) {
+          return PageLoader();
         }
 
-        if (controller.employees.isEmpty) {
-          return const Center(child: Text("No employees found"));
+        if (empController.employees.isEmpty) {
+          return Center(child: NoTasksWidget(message: "No Employee found"));
         }
 
         return RefreshIndicator(
-          onRefresh: controller.fetchEmployees,
+          onRefresh: empController.fetchEmployees,
           child: ListView.builder(
             padding: const EdgeInsets.all(12),
-            itemCount: controller.employees.length,
+            itemCount: empController.employees.length,
             itemBuilder: (context, index) {
-              final emp = controller.employees[index];
+              final emp = empController.employees[index];
 
-              return Card(
-                elevation: 3,
-                margin: const EdgeInsets.only(bottom: 12),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text((emp["Name"] ?? "").toString().substring(0, 1).toUpperCase()),
+              return Dismissible(
+                key: Key(emp["ID"].toString()),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    color: ThemeClass.errorColor,
+                    borderRadius: BorderRadius.circular(14.r),
                   ),
-                  title: Text(emp["Name"] ?? ""),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Email: ${emp["Email"] ?? ""}"),
-                      Text("Role: ${emp["RoleName"] ?? ""}"),
-                      if (emp["Mobile"] != null) Text("Mobile: ${emp["Mobile"]}"),
-                    ],
+                  child: const Icon(Icons.delete, color: Colors.white),
+                ),
+                confirmDismiss: (direction) async {
+                  return await Get.dialog<bool>(
+                    AlertDialog(
+                      backgroundColor: ThemeClass.darkBlue,
+                      title: const Text("Confirm Delete", textAlign: TextAlign.center),
+                      actionsAlignment: MainAxisAlignment.center,
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            "Are you sure you want to delete?🤔",
+                            style: Theme.of(context).textTheme.titleMedium,
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 10.h),
+                          Text(
+                            "👉${emp["Name"]}",
+                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                              color: ThemeClass.textWhite,
+                              fontSize: 20.sp,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(result: false),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.grey.shade300,
+                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                          ),
+                          child: Text(
+                            "No",
+                            style: TextStyle(
+                              color: ThemeClass.textBlack,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Get.back(result: true),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+                          ),
+                          child: Text(
+                            "Yes",
+                            style: TextStyle(
+                              color: ThemeClass.textWhite,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                onDismissed: (direction) {
+                  empController.deleteEmployee(emp["ID"]);
+                },
+                child: Card(
+                  color: ThemeClass.tealGreen,
+                  margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 8.h),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r),
+                    side: BorderSide(color: Colors.white, width: 1),
                   ),
-                  trailing: Text(
-                    "ID: ${emp["ID"]}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  child: ListTile(
+                    contentPadding: EdgeInsets.only(left: 10.w, top: 4.h, bottom: 4.h, right: 10.w),
+                    leading: CircleAvatar(
+                      radius: 20.r,
+                      backgroundColor: ThemeClass.primaryGreen,
+                      backgroundImage: emp["ProfileImage"] != null && emp["ProfileImage"].isNotEmpty
+                          ? NetworkImage("${emp["ProfileImage"]}")
+                          : null,
+                      child: emp["ProfileImage"] == null || emp["ProfileImage"].isEmpty
+                          ? Text(
+                              (emp["Name"] ?? "").toString().substring(0, 1).toUpperCase(),
+                              style: Theme.of(context).textTheme.titleLarge,
+                            )
+                          : null,
+                    ),
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(emp["Name"] ?? "", style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          "Role: ${CommonFn.toUpperCase(emp["RoleName"] ?? "")}",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "${emp["Email"] ?? ""}",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        if (emp["RoleName"] != AppConstants.roleCeo)
+                          Text(
+                            "Assigned to : ${emp["ReportingName"] ?? ""}",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        if (emp["Mobile"] != null && emp["Mobile"] != "")
+                          Text(
+                            "Mobile: ${emp["Mobile"]}",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               );
