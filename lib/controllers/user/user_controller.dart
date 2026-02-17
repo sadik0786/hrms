@@ -142,8 +142,19 @@ class UserController extends GetxController {
 
   Future<void> logOut() async {
     await AuthApiService.clearToken();
-    Get.delete<UserController>(); // Clear memory to avoid persistence issues
+    clearUserData(); // Reset observables instead of deleting the controller
     Get.offAllNamed(Routes.login);
+  }
+
+  void clearUserData() {
+    userID.value = 0;
+    userName.value = '';
+    email.value = '';
+    mobile.value = '';
+    role.value = '';
+    avatarUrl.value = null;
+    localAvatar.value = null;
+    savedPin.value = null;
   }
 
   Future<void> uploadPhoto() async {

@@ -6,7 +6,7 @@ import 'package:task_mate/services/auth_api_service.dart';
 
 import 'package:task_mate/model/hrms/leave_apply_request_model.dart';
 
-final String baseUrl = dotenv.env['baseApiUrl'] ?? '';
+String get baseUrl => dotenv.env['baseApiUrl'] ?? '';
 
 class HrmsApiService {
   // add leave type
@@ -57,6 +57,68 @@ class HrmsApiService {
         Uri.parse("$baseUrl/hrms/apply-leave"),
         headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
         body: jsonEncode(model.toJson()),
+      );
+      return jsonDecode(res.body);
+    } catch (e) {
+      return {"success": false, "error": e.toString()};
+    }
+  }
+
+  static Future<List<dynamic>> fetchMyAppliedLeaves() async {
+    try {
+      final token = await AuthApiService.getToken();
+      if (token == null) throw Exception("No token found");
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/hrms/my-leaves"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      final data = jsonDecode(res.body);
+      if (data["success"] == true) {
+        return data["data"];
+      } else {
+        throw data["message"] ?? "Failed to fetch leaves";
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<List<dynamic>> fetchOtherLeaves() async {
+    try {
+      final token = await AuthApiService.getToken();
+      if (token == null) throw Exception("No token found");
+
+      final res = await http.get(
+        Uri.parse("$baseUrl/hrms/other-leaves"),
+        headers: {"Authorization": "Bearer $token"},
+      );
+
+      final data = jsonDecode(res.body);
+      if (data["success"] == true) {
+        return data["data"];
+      } else {
+        throw data["message"] ?? "Failed to fetch other leaves";
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateLeaveStatus(
+    int leaveId,
+    String status,
+    String remarks,
+  ) async {
+    try {
+      final token = await AuthApiService.getToken();
+      if (token == null) return {"success": false, "error": "No token found"};
+
+      final res = await http.put(
+        Uri.parse("$baseUrl/hrms/update-leave-status/$leaveId"),
+        headers: {"Content-Type": "application/json", "Authorization": "Bearer $token"},
+        body: jsonEncode({"status": status, "remarks": remarks}),
       );
       return jsonDecode(res.body);
     } catch (e) {

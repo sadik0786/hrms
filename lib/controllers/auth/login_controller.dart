@@ -6,6 +6,7 @@ import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
 import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/core/routes.dart';
+import 'package:task_mate/controllers/user/user_controller.dart';
 
 class LoginController extends GetxController with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
@@ -74,7 +75,10 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
   Future<void> login() async {
     try {
       loading.value = true;
-      if (!formKey.currentState!.validate()) return;
+      if (!formKey.currentState!.validate()) {
+        loading.value = false;
+        return;
+      }
       // Check internet before hitting API
       if (!await AuthApiService.hasInternetConnection()) {
         loading.value = false;
@@ -101,6 +105,11 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
         print("token: ${res.token}");
         print("role: $role");
         print("userId: $userId");
+
+        // Initialize UserController and load data
+        final userController = Get.find<UserController>();
+        await userController.loadUser();
+
         //  role-based navigation
         switch (role) {
           case AppConstants.roleCeo:
@@ -125,6 +134,7 @@ class LoginController extends GetxController with GetSingleTickerProviderStateMi
         CustomSnackBar.error(errorMsg);
       }
     } catch (e) {
+      print("Login error catch: $e");
       loading.value = false;
       CustomSnackBar.error("Unable to connect to server. Please try again later.");
     } finally {

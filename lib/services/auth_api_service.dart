@@ -10,7 +10,7 @@ import 'package:task_mate/model/auth/login_response_model.dart';
 import 'package:task_mate/model/auth/register_request_model.dart';
 import 'package:task_mate/model/auth/register_response_model.dart';
 
-final String baseUrl = dotenv.env['baseApiUrl'] ?? '';
+String get baseUrl => dotenv.env['baseApiUrl'] ?? '';
 
 class AuthApiService {
   /// ------------------- Token Management -------------------

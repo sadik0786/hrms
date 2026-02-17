@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_mate/model/hrms/leave_apply_request_model.dart';
+import 'package:task_mate/model/hrms/leave_request_model.dart';
 import 'package:task_mate/model/hrms/leave_type_response_model.dart';
 import 'package:task_mate/services/hrms_api_service.dart';
 import 'package:task_mate/widgets/custom_snackbar.dart';
 import 'package:intl/intl.dart';
+import 'package:task_mate/controllers/user/user_controller.dart';
 
 class LeaveController extends GetxController {
   /// FORM KEYS
@@ -16,8 +18,11 @@ class LeaveController extends GetxController {
   final leaveCountController = TextEditingController();
   final reasonController = TextEditingController();
 
-  /// DATA LIST
   RxList<LeaveTypeData> leaveTypes = <LeaveTypeData>[].obs;
+  RxList<LeaveRequestModel> appliedLeaves = <LeaveRequestModel>[].obs;
+  RxList<LeaveRequestModel> otherLeavesRequest = <LeaveRequestModel>[].obs;
+  var userRole = "".obs;
+  var hrApprovalMap = <int, bool>{}.obs;
 
   /// APPLY LEAVE STATE
   var selectedLeaveTypeId = Rxn<int>();
@@ -31,13 +36,21 @@ class LeaveController extends GetxController {
     {"id": 3, "name": "Second Half"},
   ];
 
+  /// GETTERS
+  LeaveTypeData? get selectedLeaveType =>
+      leaveTypes.firstWhereOrNull((e) => e.id == selectedLeaveTypeId.value);
+
   /// LOADING
   RxBool isLoading = false.obs;
 
   @override
   void onInit() {
     super.onInit();
+    final userController = Get.find<UserController>();
+    userRole.value = userController.role.value;
     fetchLeaveTypes();
+    fetchMyAppliedLeaves();
+    fetchOtherLeaves();
   }
 
   void onLeaveTypeChanged(int? id) {
@@ -58,6 +71,32 @@ class LeaveController extends GetxController {
         toDate.value = picked;
       }
     }
+  }
+
+  double calculateLeaveDays() {
+    if (fromDate.value == null || toDate.value == null) return 0;
+
+    final duration = toDate.value!.difference(fromDate.value!).inDays + 1;
+    if (duration < 0) return 0;
+
+    if (selectedSessionId.value != 1) {
+      return 0.5;
+    }
+    return duration.toDouble();
+  }
+
+  double calculateUsedLeaves(String? leaveName) {
+    if (leaveName == null) return 0;
+    return appliedLeaves
+        .where((l) => l.leaveTypeName == leaveName && l.status != 'REJECTED')
+        .fold(0.0, (sum, item) => sum + item.totalDays);
+  }
+
+  double calculatePendingLeaves(String? leaveName) {
+    if (leaveName == null) return 0;
+    return appliedLeaves
+        .where((l) => l.leaveTypeName == leaveName && l.status == 'PENDING')
+        .fold(0.0, (sum, item) => sum + item.totalDays);
   }
 
   /// SUBMIT LEAVE TYPE
@@ -111,7 +150,9 @@ class LeaveController extends GetxController {
       final res = await HrmsApiService.applyLeave(request);
 
       if (res["success"] == true) {
+        Get.back();
         CustomSnackBar.success("Leave applied successfully");
+        fetchMyAppliedLeaves(); // Refresh history
         // Clear fields
         selectedLeaveTypeId.value = null;
         fromDate.value = null;
@@ -168,5 +209,50 @@ class LeaveController extends GetxController {
     leaveCountController.dispose();
     reasonController.dispose();
     super.onClose();
+  }
+
+  /// FETCH MY APPLIED LEAVES
+  Future<void> fetchMyAppliedLeaves() async {
+    try {
+      isLoading.value = true;
+      final data = await HrmsApiService.fetchMyAppliedLeaves();
+      appliedLeaves.assignAll(data.map((e) => LeaveRequestModel.fromJson(e)).toList());
+    } catch (e) {
+      CustomSnackBar.error("Error - $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// FETCH OTHER LEAVES (For Approval)
+  Future<void> fetchOtherLeaves() async {
+    try {
+      isLoading.value = true;
+      final data = await HrmsApiService.fetchOtherLeaves();
+      otherLeavesRequest.assignAll(data.map((e) => LeaveRequestModel.fromJson(e)).toList());
+    } catch (e) {
+      // Ignore error if not authorized or network issue during auto-fetch
+      debugPrint("fetchOtherLeaves error: $e");
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /// UPDATE LEAVE STATUS (Approve/Reject)
+  Future<void> updateLeaveStatus(int leaveId, String status, String remarks) async {
+    try {
+      isLoading.value = true;
+      final res = await HrmsApiService.updateLeaveStatus(leaveId, status, remarks);
+      if (res["success"] == true) {
+        CustomSnackBar.success(res["message"] ?? "Status updated");
+        fetchOtherLeaves(); // Refresh approval list
+      } else {
+        CustomSnackBar.error(res["message"] ?? "Failed to update status");
+      }
+    } catch (e) {
+      CustomSnackBar.error("Error: $e");
+    } finally {
+      isLoading.value = false;
+    }
   }
 }

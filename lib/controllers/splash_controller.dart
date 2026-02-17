@@ -5,6 +5,7 @@ import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/core/routes.dart';
 import 'package:task_mate/services/auth_api_service.dart';
 import 'package:task_mate/widgets/pin_verification_dialog.dart';
+import 'package:task_mate/controllers/user/user_controller.dart';
 
 class SplashController extends GetxController with GetSingleTickerProviderStateMixin {
   late AnimationController animationController;
@@ -81,6 +82,10 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
       final user = res["user"];
       await prefs.setString(AppConstants.roleKey, user["RoleName"] ?? "");
       await prefs.setInt(AppConstants.userIdKey, user["ID"]);
+
+      // Load user data into UserController
+      final userController = Get.find<UserController>();
+      await userController.loadUser();
 
       // Check PIN
       final hasPin = prefs.getString(AppConstants.appLockPinKey) != null;

@@ -8,6 +8,7 @@ class LeaveRequestModel {
   final double totalDays;
   final int sessionDay;
   final String? reason;
+  final String? rejectReason;
   final String status;
 
   LeaveRequestModel({
@@ -20,24 +21,26 @@ class LeaveRequestModel {
     required this.totalDays,
     required this.sessionDay,
     this.reason,
+    this.rejectReason,
     required this.status,
   });
 
   factory LeaveRequestModel.fromJson(Map<String, dynamic> json) {
     return LeaveRequestModel(
-      id: json['Id'],
-      userId: json['UserTaskMateAppId'],
-      employeeName: json['EmployeeName'] ?? "Unknown",
-      leaveTypeName: json['LeaveName'],
-      fromDate: json['FromDate'],
-      toDate: json['ToDate'],
-      totalDays: (json['TotalDays'] as num).toDouble(),
-      sessionDay: json['SessionDay'],
-      reason: json['Reason'] ?? '',
-      status: json['Status'],
+      id: json['id'] ?? json['Id'],
+      userId: json['userId'] ?? json['UserTaskMateAppId'],
+      employeeName: json['employeeName'] ?? json['EmployeeName'] ?? "Self",
+      leaveTypeName: json['leaveName'] ?? json['LeaveName'] ?? json['leaveTypeName'] ?? "",
+      fromDate: json['fromDate'] ?? json['FromDate'],
+      toDate: json['toDate'] ?? json['ToDate'],
+      totalDays: (json['totalDays'] ?? json['TotalDays'] as num).toDouble(),
+      sessionDay: json['sessionDay'] ?? json['SessionDay'],
+      reason: json['reason'] ?? json['Reason'] ?? '',
+      rejectReason: json['rejectReason'] ?? json['RejectReason'] ?? '',
+      status: json['status'] ?? json['Status'],
     );
   }
-  LeaveRequestModel copyWith({String? status}) {
+  LeaveRequestModel copyWith({String? status, String? rejectReason}) {
     return LeaveRequestModel(
       id: id,
       userId: userId,
@@ -48,6 +51,7 @@ class LeaveRequestModel {
       totalDays: totalDays,
       sessionDay: sessionDay,
       reason: reason,
+      rejectReason: rejectReason ?? this.rejectReason,
       status: status ?? this.status,
     );
   }

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:task_mate/controllers/theme_controller.dart';
 import 'package:task_mate/core/routes.dart';
 import 'package:task_mate/core/theme.dart';
+import 'package:task_mate/bindings/initial_binding.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,11 +14,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
-
-  // Initialize the theme controller
-  // ignore: unused_field
-  final ThemeController _themeController = Get.put(ThemeController());
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +30,9 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeClass.darkTheme,
           themeMode: ThemeMode.dark,
           initialRoute: Routes.initialRoute,
-          // initialBinding: AllBinding(),
+          initialBinding: InitialBinding(),
           getPages: appPages(),
           builder: (context, widget) {
-            // ScreenUtil.init(context, designSize: const Size(375, 812));
             return Container(
               color: ThemeClass.darkBgColor,
               child: SafeArea(top: false, left: false, right: false, bottom: true, child: widget!),

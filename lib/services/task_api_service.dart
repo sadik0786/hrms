@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:task_mate/services/auth_api_service.dart';
 
-final String baseUrl = dotenv.env['baseApiUrl'] ?? '';
+String get baseUrl => dotenv.env['baseApiUrl'] ?? '';
 
 class TaskApiService {
   // NEW: Get Tasks with Hierarchy
