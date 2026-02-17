@@ -1,22 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:get/get.dart';
 import 'package:task_mate/core/theme.dart';
 
 class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final String? userName;
   final VoidCallback onLogout;
-  final RxBool isDarkMode;
-  final VoidCallback onToggleTheme;
 
   const CommonAppBar({
     super.key,
     required this.title,
     required this.userName,
     required this.onLogout,
-    required this.isDarkMode,
-    required this.onToggleTheme,
   });
 
   @override

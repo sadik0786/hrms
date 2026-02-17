@@ -32,14 +32,14 @@ class MyApp extends StatelessWidget {
           title: 'task_mate',
           theme: ThemeClass.lightTheme,
           darkTheme: ThemeClass.darkTheme,
-          themeMode: ThemeMode.system,
+          themeMode: ThemeMode.dark,
           initialRoute: Routes.initialRoute,
           // initialBinding: AllBinding(),
           getPages: appPages(),
           builder: (context, widget) {
             // ScreenUtil.init(context, designSize: const Size(375, 812));
             return Container(
-              color: Colors.white,
+              color: ThemeClass.darkBgColor,
               child: SafeArea(top: false, left: false, right: false, bottom: true, child: widget!),
             );
           },

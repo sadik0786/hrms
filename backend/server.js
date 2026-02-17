@@ -7,6 +7,7 @@ const { poolPromise, sql } = require("./db");
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const hrmsRoutes = require("./routes/hrms");
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -56,6 +57,7 @@ async function seedAdmin() {
 app.get("/", async (req, res) => res.json("working"));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/hrms", hrmsRoutes);
 
 // Start server
 app.listen(PORT, "0.0.0.0", async () => {

@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
     final UserController controller = Get.put(UserController());
 
     return Scaffold(
-      backgroundColor: ThemeClass.darkBgColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: ThemeClass.primaryGreen,
         elevation: 0,
@@ -74,12 +74,17 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: Card(
-                      color: ThemeClass.tealGreen,
+                      color: Theme.of(context).cardColor,
                       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                       elevation: 5,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16.r),
-                        side: const BorderSide(color: Colors.white, width: 1.2),
+                        side: BorderSide(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white24
+                              : Colors.black12,
+                          width: 1.2,
+                        ),
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -120,12 +125,17 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: Card(
-                      color: ThemeClass.tealGreen,
+                      color: Theme.of(context).cardColor,
                       margin: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
                       elevation: 5,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16.r),
-                        side: const BorderSide(color: Colors.white, width: 1.2),
+                        side: BorderSide(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white24
+                              : Colors.black12,
+                          width: 1.2,
+                        ),
                       ),
                       child: Padding(
                         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
@@ -168,7 +178,7 @@ class ProfileScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ThemeClass.darkBlue,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -192,7 +202,7 @@ class ProfileScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 controller: textController,
                 maxLength: 10,
-                fillColor: ThemeClass.darkBlue,
+                fillColor: Theme.of(ctx).cardColor,
               ),
               SizedBox(height: 20.h),
               CustomButton(
@@ -252,7 +262,7 @@ class ProfileScreen extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: ThemeClass.darkBlue,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       builder: (ctx) => Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -277,7 +287,7 @@ class ProfileScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 isObscure: true,
                 maxLength: 4,
-                fillColor: ThemeClass.darkBlue,
+                fillColor: Theme.of(ctx).cardColor,
                 validator: (value) {
                   if (value == null || value.isEmpty) return "PIN required";
                   if (value.length != 4) return "PIN must be 4 digits";
@@ -291,7 +301,7 @@ class ProfileScreen extends StatelessWidget {
                 keyboardType: TextInputType.number,
                 isObscure: true,
                 maxLength: 4,
-                fillColor: ThemeClass.darkBlue,
+                fillColor: Theme.of(ctx).cardColor,
                 validator: (value) {
                   if (value == null || value.isEmpty) return "Confirm your PIN";
                   if (value != pinController.text) return "PINs do not match";

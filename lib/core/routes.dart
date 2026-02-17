@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/screens/auth/login_screen.dart';
+import 'package:task_mate/screens/hrms/hrms_dashboard.dart';
+import 'package:task_mate/screens/hrms/widgets/add_leave_type.dart';
+import 'package:task_mate/screens/hrms/widgets/apply_leave.dart';
+import 'package:task_mate/screens/hrms/widgets/leave_home.dart';
 import 'package:task_mate/screens/profile/profile_screen.dart';
 import 'package:task_mate/screens/splash_screent.dart';
 // after login
@@ -17,6 +21,11 @@ class Routes {
   static const String dashboard = "/dashboard";
   static const String profileScreen = "/profileScreen";
   static const String employeeScreen = "/employeeScreen";
+  //hrms
+  static const String hrmsDashboard = "/hrmsDashboard";
+  static const String leaveHome = "/leaveHome";
+  static const String addLeaveType = "/addLeaveType";
+  static const String applyLeave = "/applyLeave";
 }
 
 const Duration transitionDuration = Duration(milliseconds: AppConstants.transitionDuration);
@@ -37,4 +46,9 @@ List<GetPage> appPages() => [
   _getPage(Routes.dashboard, Dashboard()),
   _getPage(Routes.profileScreen, ProfileScreen()),
   _getPage(Routes.employeeScreen, EmployeeScreen()),
+  //hrms
+  _getPage(Routes.hrmsDashboard, HrmsDashboard()),
+  _getPage(Routes.leaveHome, LeaveHome()),
+  _getPage(Routes.addLeaveType, AddLeaveType()),
+  _getPage(Routes.applyLeave, ApplyLeave()),
 ];

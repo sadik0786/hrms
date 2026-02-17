@@ -18,7 +18,7 @@ class EmployeeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ThemeClass.darkBgColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text("All Employees", style: Theme.of(context).textTheme.titleLarge),
         leading: IconButton(
@@ -69,7 +69,7 @@ class EmployeeScreen extends StatelessWidget {
                 confirmDismiss: (direction) async {
                   return await Get.dialog<bool>(
                     AlertDialog(
-                      backgroundColor: ThemeClass.darkBlue,
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
                       title: const Text("Confirm Delete", textAlign: TextAlign.center),
                       actionsAlignment: MainAxisAlignment.center,
                       content: Column(
@@ -132,12 +132,17 @@ class EmployeeScreen extends StatelessWidget {
                   empController.deleteEmployee(emp["ID"]);
                 },
                 child: Card(
-                  color: ThemeClass.tealGreen,
+                  color: Theme.of(context).cardColor,
                   margin: EdgeInsets.symmetric(horizontal: 2.w, vertical: 8.h),
                   elevation: 4,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14.r),
-                    side: BorderSide(color: Colors.white, width: 1),
+                    side: BorderSide(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white12
+                          : Colors.black12,
+                      width: 1,
+                    ),
                   ),
                   child: ListTile(
                     contentPadding: EdgeInsets.only(left: 10.w, top: 4.h, bottom: 4.h, right: 10.w),

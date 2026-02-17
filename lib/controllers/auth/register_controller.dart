@@ -180,7 +180,8 @@ class RegisterController extends GetxController {
         CustomSnackBar.error(response.message ?? "Failed to add employee");
       }
     } catch (e) {
-      CustomSnackBar.error("Something went wrong");
+      debugPrint("Registration error: $e");
+      CustomSnackBar.error("Something went wrong: $e");
     } finally {
       loading.value = false;
     }

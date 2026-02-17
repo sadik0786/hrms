@@ -44,8 +44,7 @@ class ThemeClass {
       titleTextStyle: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.white),
     ),
     textTheme: TextTheme(
-      bodySmall: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w600, color: textWhite),
-
+      bodySmall: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: textBlack),
       titleLarge: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600, color: textWhite),
       titleMedium: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w500, color: textWhite),
       titleSmall: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: textWhite),
@@ -98,7 +97,7 @@ class ThemeClass {
       titleTextStyle: TextStyle(fontSize: 20.sp, fontWeight: FontWeight.w600, color: Colors.white),
     ),
     textTheme: TextTheme(
-      bodySmall: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w600, color: textWhite),
+      bodySmall: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w400, color: textWhite),
       titleLarge: TextStyle(
         fontSize: 16.sp,
         fontWeight: FontWeight.w600,

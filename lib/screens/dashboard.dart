@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:task_mate/controllers/theme_controller.dart';
+import 'package:task_mate/controllers/user/user_controller.dart';
+import 'package:task_mate/core/app_constants.dart';
 import 'package:task_mate/core/routes.dart';
-import 'package:task_mate/core/theme.dart';
 import 'package:task_mate/widgets/custom_appbar.dart';
 
 class Dashboard extends StatefulWidget {
@@ -15,116 +14,98 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final ThemeController _themeController = Get.find();
-
-  String? userName;
-  String? role;
-  bool isDarkMode = false;
+  final UserController userController = Get.find<UserController>();
 
   @override
   void initState() {
     super.initState();
-    _loadUser();
   }
 
-  Future<void> _loadUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString("name") ?? "Employee";
-      role = prefs.getString("role")?.toLowerCase() ?? "employee";
-    });
-  }
 
-  Future<void> _logOut() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
-    if (!mounted) return;
-    Get.offNamed(Routes.login);
-  }
 
   List<_DashboardItem> _getMenuItems() {
-    if (role == "ceo" || role == "hr") {
-      return [
-        _DashboardItem(
-          title: 'Add Employee',
-          icon: Icons.person_add,
-          gradient: [Colors.lightBlueAccent.shade400, Colors.lightBlueAccent.shade200],
-          onTap: () {
-            Get.toNamed(Routes.registerScreen);
-          },
-        ),
-        _DashboardItem(
-          title: 'My Profile',
-          icon: Icons.account_circle,
-          gradient: [Colors.purpleAccent.shade200, Colors.purpleAccent.shade100],
-          onTap: () {
-            Get.toNamed(Routes.profileScreen);
-          },
-        ),
+    final String role = userController.role.value.toLowerCase();
+
+    List<_DashboardItem> items = [
+      _DashboardItem(
+        title: 'My Profile',
+        icon: Icons.account_circle,
+        gradient: [Colors.purpleAccent.shade200, Colors.purpleAccent.shade100],
+        onTap: () => Get.toNamed(Routes.profileScreen),
+      ),
+    ];
+
+    if (role == AppConstants.roleCeo || role == AppConstants.roleHr) {
+      items.add(
         _DashboardItem(
           title: 'Employees',
-          icon: Icons.account_circle,
-          gradient: [Colors.purpleAccent.shade200, Colors.purpleAccent.shade100],
-          onTap: () {
-            Get.toNamed(Routes.employeeScreen);
-          },
+          icon: Icons.people,
+          gradient: [Colors.greenAccent.shade400, Colors.greenAccent.shade200],
+          onTap: () => Get.toNamed(Routes.employeeScreen),
         ),
-      ];
-    }
-    if (role == "manager") {
-      return [
+      );
+      items.add(
         _DashboardItem(
           title: 'Add Employee',
           icon: Icons.person_add,
           gradient: [Colors.lightBlueAccent.shade400, Colors.lightBlueAccent.shade200],
-          onTap: () {
-            Get.toNamed(Routes.registerScreen);
-          },
+          onTap: () => Get.toNamed(Routes.registerScreen),
         ),
-      ];
-    } else if (role == "admin") {
-      return [
+      );
+    }
+
+    if (role == AppConstants.roleCeo || role == AppConstants.roleHr) {
+      items.add(
+        _DashboardItem(
+          title: 'Manage Leave',
+          icon: Icons.manage_history,
+          gradient: [Colors.orangeAccent.shade400, Colors.orangeAccent.shade200],
+          onTap: () => Get.toNamed(Routes.hrmsDashboard),
+        ),
+      );
+    }
+
+    if (role == AppConstants.roleManager || role == AppConstants.roleAdmin) {
+      items.add(
         _DashboardItem(
           title: 'Add Employee',
           icon: Icons.person_add,
           gradient: [Colors.lightBlueAccent.shade400, Colors.lightBlueAccent.shade200],
-          onTap: () {
-            Get.toNamed(Routes.registerScreen);
-          },
+          onTap: () => Get.toNamed(Routes.registerScreen),
         ),
-      ];
-    } else {
-      return [];
+      );
     }
+
+    return items;
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = _getMenuItems();
+    return Obx(() {
+      final items = _getMenuItems();
 
-    return Scaffold(
-      appBar: CommonAppBar(
-        title: "Task Mate",
-        userName: userName,
-        onLogout: _logOut,
-        isDarkMode: _themeController.isDarkMode,
-        onToggleTheme: _themeController.toggleTheme,
-      ),
-      body: SafeArea(
-        child: Container(
-          decoration: const BoxDecoration(color: ThemeClass.darkBgColor),
-          child: Padding(
-            padding: EdgeInsetsGeometry.symmetric(horizontal: 20.w, vertical: 20.h),
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 20.h,
-              crossAxisSpacing: 30.w,
-              children: items.map((item) => _GlassCard(item: item)).toList(),
+      return Scaffold(
+        appBar: CommonAppBar(
+          title: "Task Mate",
+          userName: userController.userName.value,
+          onLogout: userController.logOut,
+        ),
+        body: SafeArea(
+          child: Container(
+            decoration: BoxDecoration(color: Theme.of(context).scaffoldBackgroundColor),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+              child: GridView.count(
+                crossAxisCount: 2,
+                mainAxisSpacing: 20.h,
+                crossAxisSpacing: 30.w,
+                children: items.map((item) => _GlassCard(item: item)).toList(),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
