@@ -54,27 +54,14 @@ class _DashboardState extends State<Dashboard> {
       );
     }
 
-    if (role == AppConstants.roleCeo || role == AppConstants.roleHr) {
-      items.add(
+    items.add(
         _DashboardItem(
           title: 'Manage Leave',
           icon: Icons.manage_history,
           gradient: [Colors.orangeAccent.shade400, Colors.orangeAccent.shade200],
           onTap: () => Get.toNamed(Routes.hrmsDashboard),
         ),
-      );
-    }
-
-    if (role == AppConstants.roleManager || role == AppConstants.roleAdmin) {
-      items.add(
-        _DashboardItem(
-          title: 'Add Employee',
-          icon: Icons.person_add,
-          gradient: [Colors.lightBlueAccent.shade400, Colors.lightBlueAccent.shade200],
-          onTap: () => Get.toNamed(Routes.registerScreen),
-        ),
-      );
-    }
+    );
 
     return items;
   }
