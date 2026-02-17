@@ -149,10 +149,26 @@ class LeaveHome extends StatelessWidget {
                   Text("Reject Reason", style: Theme.of(context).textTheme.bodySmall),
                   Text(
                     leave.rejectReason!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ],
+            if (leave.approverName != null && leave.approverName!.isNotEmpty) ...[
+              const Divider(color: Colors.white10, height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    leave.status.toString().toUpperCase() == "REJECTED"
+                        ? "Rejected by"
+                        : "Approved by",
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Text(
+                    leave.approverName!,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                   ),
                 ],
               ),

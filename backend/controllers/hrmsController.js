@@ -140,9 +140,11 @@ exports.getMyAppliedLeaves = async (req, res) => {
           al.Reason as reason,
           al.RejectReason as rejectReason,
           al.Status as status,
-          al.EntryTimeStamp as entryTimeStamp
+          al.EntryTimeStamp as entryTimeStamp,
+          u.Name as approverName
         FROM dbo.ApplyLeaveTaskMateApp al
         INNER JOIN dbo.LeaveTypeTaskMateApp lt ON al.LeaveTypeTaskMateAppId = lt.Id
+        LEFT JOIN dbo.UserTaskMateApp u ON al.ApprovedBy = u.ID
         WHERE al.UserTaskMateAppId = @UserId
         ORDER BY al.EntryTimeStamp DESC
       `);

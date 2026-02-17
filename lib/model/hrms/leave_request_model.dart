@@ -9,6 +9,7 @@ class LeaveRequestModel {
   final int sessionDay;
   final String? reason;
   final String? rejectReason;
+  final String? approverName;
   final String status;
 
   LeaveRequestModel({
@@ -22,6 +23,7 @@ class LeaveRequestModel {
     required this.sessionDay,
     this.reason,
     this.rejectReason,
+    this.approverName,
     required this.status,
   });
 
@@ -37,10 +39,11 @@ class LeaveRequestModel {
       sessionDay: json['sessionDay'] ?? json['SessionDay'],
       reason: json['reason'] ?? json['Reason'] ?? '',
       rejectReason: json['rejectReason'] ?? json['RejectReason'] ?? '',
+      approverName: json['approverName'] ?? json['ApproverName'] ?? '',
       status: json['status'] ?? json['Status'],
     );
   }
-  LeaveRequestModel copyWith({String? status, String? rejectReason}) {
+  LeaveRequestModel copyWith({String? status, String? rejectReason, String? approverName}) {
     return LeaveRequestModel(
       id: id,
       userId: userId,
@@ -51,6 +54,7 @@ class LeaveRequestModel {
       totalDays: totalDays,
       sessionDay: sessionDay,
       reason: reason,
+      approverName: approverName ?? this.approverName,
       rejectReason: rejectReason ?? this.rejectReason,
       status: status ?? this.status,
     );
