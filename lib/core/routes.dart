@@ -6,6 +6,7 @@ import 'package:task_mate/screens/hrms/hrms_dashboard.dart';
 import 'package:task_mate/screens/hrms/widgets/add_leave_type.dart';
 import 'package:task_mate/screens/hrms/widgets/apply_leave.dart';
 import 'package:task_mate/screens/hrms/widgets/approve_leave.dart';
+import 'package:task_mate/screens/hrms/widgets/leave_balance.dart';
 import 'package:task_mate/screens/hrms/widgets/leave_home.dart';
 import 'package:task_mate/screens/profile/profile_screen.dart';
 import 'package:task_mate/screens/splash_screent.dart';
@@ -28,7 +29,7 @@ class Routes {
   static const String addLeaveType = "/addLeaveType";
   static const String applyLeave = "/applyLeave";
   static const String approveLeave = "/approveLeave";
-
+  static const String leaveBalance = "/leaveBalance";
 }
 
 const Duration transitionDuration = Duration(milliseconds: AppConstants.transitionDuration);
@@ -55,4 +56,6 @@ List<GetPage> appPages() => [
   _getPage(Routes.addLeaveType, AddLeaveType()),
   _getPage(Routes.applyLeave, ApplyLeave()),
   _getPage(Routes.approveLeave, ApproveLeave()),
+  _getPage(Routes.leaveBalance, LeaveBalance()),
+
 ];

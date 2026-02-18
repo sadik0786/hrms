@@ -39,9 +39,20 @@ class CommonFn {
     return initials.toUpperCase();
   }
 
-  /// Truncate text with ellipsis if it exceeds maxLength
-  static String truncate(String text, {int maxLength = 20}) {
-    if (text.length <= maxLength) return text;
-    return '${text.substring(0, maxLength)}...';
+  /// Get current financial year (Apr - Mar)
+  static String getFinancialYear() {
+    final now = DateTime.now();
+    int startYear;
+    int endYear;
+
+    if (now.month >= 4) {
+      startYear = now.year;
+      endYear = now.year + 1;
+    } else {
+      startYear = now.year - 1;
+      endYear = now.year;
+    }
+
+    return "Apr $startYear - Mar $endYear";
   }
 }

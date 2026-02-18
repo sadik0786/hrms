@@ -8,6 +8,7 @@ import 'package:task_mate/core/theme.dart';
 import 'package:task_mate/screens/hrms/widgets/add_leave_type.dart';
 import 'package:task_mate/screens/hrms/widgets/apply_leave.dart';
 import 'package:task_mate/screens/hrms/widgets/approve_leave.dart';
+import 'package:task_mate/screens/hrms/widgets/leave_balance.dart';
 import 'package:task_mate/screens/hrms/widgets/leave_home.dart';
 
 class HrmsDashboard extends StatefulWidget {
@@ -50,6 +51,7 @@ class _HrmsDashboardState extends State<HrmsDashboard> {
             1 => "Add Leave Type",
             2 => "Apply Leave",
             3 => "Approve Leave",
+            4 => "Leave Balance",
             _ => "Dashboard",
           }, style: Theme.of(context).textTheme.titleLarge),
           leading: Builder(
@@ -73,10 +75,11 @@ class _HrmsDashboardState extends State<HrmsDashboard> {
           child: IndexedStack(
             index: _selectedIndex,
             children: [
-              const LeaveHome(),
+              const LeaveHome(), // index 0
               const AddLeaveType(), // index 1
               const ApplyLeave(), // index 2
               const ApproveLeave(), // index 3
+              const LeaveBalance(), // index 4
             ],
           ),
         ),
@@ -132,6 +135,15 @@ class _HrmsDashboardState extends State<HrmsDashboard> {
                   selected: _selectedIndex == 3,
                   onTap: () {
                     _onItemTapped(3);
+                    Navigator.pop(context);
+                  },
+                ),
+              if (role != AppConstants.roleCeo)
+                ListTile(
+                  title: const Text('Leave Balance'),
+                  selected: _selectedIndex == 4,
+                  onTap: () {
+                    _onItemTapped(4);
                     Navigator.pop(context);
                   },
                 ),
