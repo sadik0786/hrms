@@ -21,6 +21,9 @@ class LeaveBalance extends StatelessWidget {
       [const Color(0xFF3B82F6), const Color(0xFF93C5FD)], // Tech Blue
       [const Color(0xFFEC4899), const Color(0xFFF9A8D4)], // Stylish Pink
       [const Color(0xFF8B5CF6), const Color(0xFFC4B5FD)], // Royal Violet
+      [const Color(0xFFF97316), const Color(0xFFFDBA74)], // Sunset Orange
+      [const Color(0xFF06B6D4), const Color(0xFF67E8F9)], // Ocean Teal
+      [const Color(0xFFF43F5E), const Color(0xFFFB7185)], // Hot Rose
     ];
 
     return Scaffold(
@@ -114,125 +117,131 @@ class LeaveBalance extends StatelessWidget {
                 return const NoTasksWidget(message: "No leave records found");
               }
 
-              return ListView.builder(
-                padding: EdgeInsets.fromLTRB(15.w, 24.h, 15.w, 80.h),
-                itemCount: controller.leaveTypes.length,
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  final leaveType = controller.leaveTypes[index];
-                  final used = controller.calculateUsedLeaves(leaveType.leaveName);
-                  final total = (leaveType.leaveCount ?? 0).toDouble();
-                  final balance = total - used;
-                  final progress = total > 0 ? (used / total) : 0.0;
-                  final colors = dialerGradients[index % dialerGradients.length];
+              return RefreshIndicator(
+                onRefresh: () => controller.fetchLeaveTypes(),
+                color: ThemeClass.primaryGreen,
+                child: ListView.builder(
+                  padding: EdgeInsets.fromLTRB(15.w, 24.h, 15.w, 80.h),
+                  itemCount: controller.leaveTypes.length,
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  itemBuilder: (context, index) {
+                    final leaveType = controller.leaveTypes[index];
+                    final used = controller.calculateUsedLeaves(leaveType.leaveName);
+                    final total = (leaveType.leaveCount ?? 0).toDouble();
+                    final balance = total - used;
+                    final progress = total > 0 ? (used / total) : 0.0;
+                    final colors = dialerGradients[index % dialerGradients.length];
 
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: Duration(milliseconds: 700 + (index * 120)),
-                    curve: Curves.easeOutQuart,
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Transform.translate(
-                          offset: Offset(0, 40 * (1 - value)),
-                          child: Container(
-                            margin: EdgeInsets.only(bottom: 20.h),
-                            decoration: BoxDecoration(
-                              color: ThemeClass.darkCardColor,
-                              borderRadius: BorderRadius.circular(20.r),
-                              border: Border.all(
-                                color: colors[0].withOpacity(0.7 * value), // Animate border opacity
-                                width: (1.2 + (0.6 * value)).w, // Animate border thickness
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colors[0].withOpacity(0.12 * value), // Animate shadow
-                                  blurRadius: 25,
-                                  spreadRadius: 2 * value,
-                                ),
-                              ],
-                            ),
-                            child: child,
-                          ),
-                        ),
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20.r),
-                      child: Stack(
-                        children: [
-                          // Subtle radial gradient background for the trendy look
-                          Positioned(
-                            top: -50,
-                            right: -50,
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 700 + (index * 120)),
+                      curve: Curves.easeOutQuart,
+                      builder: (context, value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 40 * (1 - value)),
                             child: Container(
-                              width: 150.w,
-                              height: 150.w,
+                              margin: EdgeInsets.only(bottom: 20.h),
                               decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  colors: [colors[0].withOpacity(0.12), Colors.transparent],
+                                color: ThemeClass.darkCardColor,
+                                borderRadius: BorderRadius.circular(20.r),
+                                border: Border.all(
+                                  color: colors[0].withOpacity(
+                                    0.7 * value,
+                                  ), // Animate border opacity
+                                  width: (1.2 + (0.6 * value)).w, // Animate border thickness
                                 ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: colors[0].withOpacity(0.12 * value), // Animate shadow
+                                    blurRadius: 25,
+                                    spreadRadius: 2 * value,
+                                  ),
+                                ],
                               ),
+                              child: child,
                             ),
                           ),
-                          Padding(
-                            padding: EdgeInsets.all(20.w),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                _buildModernKnob(progress, balance, colors[0]),
-                                SizedBox(width: 24.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        leaveType.leaveName ?? "Unknown",
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 17.sp,
-                                          fontWeight: FontWeight.w900,
-                                          color: Colors.white,
-                                          letterSpacing: -0.2,
-                                        ),
-                                      ),
-                                      SizedBox(height: 14.h),
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: _buildDataMetric(
-                                              icon: Icons.check_circle_outline_rounded,
-                                              label: "Used",
-                                              value: used.toStringAsFixed(1),
-                                              color: colors[0],
-                                            ),
-                                          ),
-                                          SizedBox(width: 10.w),
-                                          Expanded(
-                                            child: _buildDataMetric(
-                                              icon: Icons.list_alt_rounded,
-                                              label: "Total",
-                                              value: total.toStringAsFixed(1),
-                                              color: Colors.white38,
-                                              isTotal: true,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20.r),
+                        child: Stack(
+                          children: [
+                            // Subtle radial gradient background for the trendy look
+                            Positioned(
+                              top: -50,
+                              right: -50,
+                              child: Container(
+                                width: 150.w,
+                                height: 150.w,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: RadialGradient(
+                                    colors: [colors[0].withOpacity(0.12), Colors.transparent],
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
+                            Padding(
+                              padding: EdgeInsets.all(20.w),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  _buildModernKnob(progress, balance, colors[0]),
+                                  SizedBox(width: 24.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          leaveType.leaveName ?? "Unknown",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 17.sp,
+                                            fontWeight: FontWeight.w900,
+                                            color: Colors.white,
+                                            letterSpacing: -0.2,
+                                          ),
+                                        ),
+                                        SizedBox(height: 14.h),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildDataMetric(
+                                                icon: Icons.check_circle_outline_rounded,
+                                                label: "Used",
+                                                value: used.toStringAsFixed(1),
+                                                color: colors[0],
+                                              ),
+                                            ),
+                                            SizedBox(width: 10.w),
+                                            Expanded(
+                                              child: _buildDataMetric(
+                                                icon: Icons.list_alt_rounded,
+                                                label: "Total",
+                                                value: total.toStringAsFixed(1),
+                                                color: Colors.white38,
+                                                isTotal: true,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                     ),
                   );
                 },
+                ),
               );
             }),
           ),

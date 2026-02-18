@@ -175,7 +175,7 @@ class LeaveController extends GetxController {
       isLoading.value = true;
       final res = await HrmsApiService.addLeaveType(leaveName: leaveName, leaveCount: leaveCount);
       if (res["success"] == true) {
-        fetchLeaveTypes();
+        await fetchLeaveTypes();
         leaveNameController.clear();
         leaveCountController.clear();
         return true;
