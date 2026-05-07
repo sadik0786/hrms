@@ -131,7 +131,7 @@ class _HrmsDashboardState extends State<HrmsDashboard> {
                   role == AppConstants.roleHr ||
                   role == AppConstants.roleManager)
                 ListTile(
-                  title: const Text('Approve Leave'),
+                  title: const Text('Approve Emp. Leave'),
                   selected: _selectedIndex == 3,
                   onTap: () {
                     _onItemTapped(3);

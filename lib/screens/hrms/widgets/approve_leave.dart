@@ -23,28 +23,298 @@ class _ApproveLeaveState extends State<ApproveLeave> {
 
   @override
   Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: PreferredSize(
+          preferredSize: Size.fromHeight(50.h),
+          child: TabBar(
+            dividerColor: Colors.transparent,
+            indicatorColor: ThemeClass.primaryGreen,
+            labelColor: ThemeClass.primaryGreen,
+            unselectedLabelColor: Colors.grey[400],
+            indicatorWeight: 3.r,
+            labelStyle: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.bold),
+            tabs: const [
+              Tab(text: "Pending"),
+              Tab(text: "Completed"),
+            ],
+          ),
+        ),
+        body: Padding(
+          padding: EdgeInsets.only(top: 15.h),
+          child: Obx(() {
+            if (leaveController.isLoading.value && leaveController.otherLeavesRequest.isEmpty) {
+              return const PageLoader();
+            }
+
+            final pendingLeaves = leaveController.otherLeavesRequest
+                .where((e) => e.status.toString().toUpperCase() == "PENDING")
+                .toList();
+
+            final completedLeaves = leaveController.otherLeavesRequest
+                .where(
+                  (e) =>
+                      e.status.toString().toUpperCase() == "APPROVED" ||
+                      e.status.toString().toUpperCase() == "REJECTED",
+                )
+                .toList()
+                .reversed
+                .toList(); // Newest first
+
+            return TabBarView(
+              children: [
+                // PENDING TAB
+                RefreshIndicator(
+                  onRefresh: () => leaveController.fetchOtherLeaves(),
+                  child: pendingLeaves.isEmpty
+                      ? Center(child: NoTasksWidget(message: "No pending leave requests"))
+                      : ListView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          itemCount: pendingLeaves.length,
+                          itemBuilder: (context, index) {
+                            return _approvalCard(pendingLeaves[index]);
+                          },
+                        ),
+                ),
+
+                // COMPLETED TAB
+                RefreshIndicator(
+                  onRefresh: () => leaveController.fetchOtherLeaves(),
+                  child: completedLeaves.isEmpty
+                      ? Center(child: NoTasksWidget(message: "No completed leave records"))
+                      : ListView.builder(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          itemCount: completedLeaves.length,
+                          itemBuilder: (context, index) {
+                            return _completedCard(completedLeaves[index]);
+                          },
+                        ),
+                ),
+              ],
+            );
+          }),
+        ),
+      ),
+    );
+  }
+
+  /// ---------------- COMPLETED CARD ----------------
+  Widget _completedCard(LeaveRequestModel leave) {
+    final bool isApproved = leave.status.toString().toUpperCase() == "APPROVED";
+
+    return GestureDetector(
+      onTap: () => _showLeaveDetailBottomSheet(leave),
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(15.r),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22.r,
+              backgroundColor: (isApproved ? Colors.green : Colors.red).withOpacity(0.1),
+              child: Icon(
+                isApproved ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                color: isApproved ? Colors.green : Colors.red,
+                size: 26.sp,
+              ),
+            ),
+            SizedBox(width: 15.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    leave.employeeName,
+                    style: TextStyle(
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    "${CommonFn.formatDate(leave.fromDate)} - ${CommonFn.formatDate(leave.toDate)}",
+                    style: TextStyle(fontSize: 12.sp, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _statusIndicatorChip(leave.status.toString().toUpperCase()),
+                SizedBox(height: 4.h),
+                Text(
+                  "${leave.totalDays}d",
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statusIndicatorChip(String status) {
+    final bool isApproved = status == "APPROVED";
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: (isApproved ? Colors.green : Colors.red).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8.r),
+      ),
+      child: Text(
+        status,
+        style: TextStyle(
+          color: isApproved ? Colors.green : Colors.red,
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  void _showLeaveDetailBottomSheet(LeaveRequestModel leave) {
+    final bool isApproved = leave.status.toString().toUpperCase() == "APPROVED";
+
+    Get.bottomSheet(
+      Container(
+        padding: EdgeInsets.all(24.r),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.r)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  margin: EdgeInsets.only(bottom: 20.h),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Leave Details",
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  _statusIndicatorChip(leave.status.toString().toUpperCase()),
+                ],
+              ),
+              SizedBox(height: 25.h),
+              _detailRow(Icons.person_outline_rounded, "Employee", leave.employeeName),
+              _detailRow(Icons.category_outlined, "Leave Type", leave.leaveTypeName),
+              _detailRow(
+                Icons.calendar_today_rounded,
+                "Duration",
+                "${CommonFn.formatDate(leave.fromDate)} to ${CommonFn.formatDate(leave.toDate)} (${leave.totalDays} Days)",
+              ),
+              _detailRow(Icons.text_fields_rounded, "Employee Reason", leave.reason ?? "N/A"),
+              Divider(height: 30.h, color: Colors.grey[100]),
+              _detailRow(
+                isApproved ? Icons.verified_user_outlined : Icons.report_gmailerrorred_rounded,
+                isApproved ? "Approved By" : "Rejected By",
+                leave.approverName ?? "System",
+                valueColor: isApproved ? Colors.green : Colors.red,
+              ),
+              _detailRow(
+                Icons.comment_bank_outlined,
+                "Admin Remarks",
+                leave.rejectReason ?? "No remarks provided",
+                isLast: true,
+              ),
+              SizedBox(height: 20.h),
+              SizedBox(
+                width: double.infinity,
+                child: CustomButton(text: "Close", onPressed: () => Get.back()),
+              ),
+              SizedBox(height: 10.h),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+    );
+  }
+
+  Widget _detailRow(
+    IconData icon,
+    String label,
+    String value, {
+    Color? valueColor,
+    bool isLast = false,
+  }) {
     return Padding(
-      padding: EdgeInsets.all(16.w),
-      child: Obx(() {
-        if (leaveController.isLoading.value && leaveController.otherLeavesRequest.isEmpty) {
-          return const PageLoader();
-        }
-
-        final pendingLeaves = leaveController.otherLeavesRequest
-            .where((e) => e.status.toString().toUpperCase() == "PENDING")
-            .toList();
-
-        if (pendingLeaves.isEmpty) {
-          return Center(child: NoTasksWidget(message: "No pending leave requests"));
-        }
-
-        return ListView.builder(
-          itemCount: pendingLeaves.length,
-          itemBuilder: (context, index) {
-            return _approvalCard(pendingLeaves[index]);
-          },
-        );
-      }),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 18.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.r),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(10.r),
+            ),
+            child: Icon(icon, size: 18.sp, color: Colors.grey[600]),
+          ),
+          SizedBox(width: 15.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: valueColor ?? Colors.black87,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

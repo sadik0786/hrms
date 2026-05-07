@@ -40,10 +40,30 @@ class CustomDropdownField<T> extends StatefulWidget {
 }
 
 class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> {
+  late ValueNotifier<T?> _selectedValueNotifier;
   bool _isDropdownOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedValueNotifier = ValueNotifier<T?>(widget.value);
+  }
+
+  @override
+  void didUpdateWidget(CustomDropdownField<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value) {
+      _selectedValueNotifier.value = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _selectedValueNotifier.dispose();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
-
     if (widget.isLoading) {
       return Container(
         padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -86,7 +106,7 @@ class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> {
         ],
         DropdownButtonFormField2<T>(
           isExpanded: true,
-          value: widget.value,
+          valueListenable: _selectedValueNotifier,
           hint: Text(
             widget.hintText,
             style: TextStyle(
@@ -97,7 +117,7 @@ class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> {
             ),
           ),
           items: widget.items.map((item) {
-            return DropdownMenuItem<T>(
+            return DropdownItem<T>(
               value: item[widget.valueKey] as T,
               child: Text(
                 item[widget.labelKey].toString(),
@@ -150,7 +170,7 @@ class _CustomDropdownFieldState<T> extends State<CustomDropdownField<T>> {
               borderRadius: BorderRadius.circular(12.r),
             ),
           ),
-          buttonStyleData: ButtonStyleData(
+          buttonStyleData: FormFieldButtonStyleData(
             padding: EdgeInsets.symmetric(horizontal: 8.w),
             height: 28.h,
             width: double.infinity,
